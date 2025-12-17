@@ -33,7 +33,7 @@ gpu run python train.py
 | Example | Description |
 |---------|-------------|
 | [ComfyUI](./examples/comfyui/) | Node-based Stable Diffusion UI with custom nodes |
-| [Invoke AI](./examples/invoke.ai/) | Stable Diffusion with a web interface |
+| [Invoke AI](./examples/invokeai/) | Stable Diffusion with a web interface |
 
 ## Common Commands
 
@@ -42,7 +42,7 @@ gpu run python train.py
 gpu run python script.py
 
 # Run a server with port forwarding
-gpu run --publish 8188:8188 python server.py --listen 0.0.0.0
+gpu run -p 8188:8188 python server.py --listen 0.0.0.0
 
 # Open a shell on the remote pod
 gpu shell
