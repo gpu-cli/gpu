@@ -1,0 +1,20 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // GPU CLI Configuration
+  // ComfyUI - Node-based Stable Diffusion UI
+  "project_id": "comfyui",
+  "provider": "runpod",
+  "outputs": ["ComfyUI/output/"],
+  "gpu_type": "NVIDIA GeForce RTX 4090",
+  "min_vram": 24,
+
+  // Optional: Persistent storage for models (recommended)
+  // Create a Network Volume in RunPod and add the ID here
+  // "network_volume_id": "YOUR_VOLUME_ID",
+
+  "template": {
+    "name": "ComfyUI",
+    "description": "Node-based Stable Diffusion UI with custom nodes",
+    "author": "gpu-cli"
+  }
+}

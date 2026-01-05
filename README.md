@@ -30,10 +30,14 @@ gpu run python train.py
 
 ## Examples
 
-| Example | Description |
-|---------|-------------|
-| [ComfyUI](./examples/comfyui/) | Node-based Stable Diffusion UI with custom nodes |
-| [Invoke AI](./examples/invokeai/) | Stable Diffusion with a web interface |
+Ready-to-use templates for common AI/ML workflows:
+
+| Example | GPU | Description |
+|---------|-----|-------------|
+| [ComfyUI](./examples/comfyui/) | RTX 4090 | Node-based Stable Diffusion UI with custom nodes |
+| [AI Video Generation](./examples/wan22-video/) | A100 80GB | Generate videos with Wan 2.2 14B |
+| [Multi-Agent](./examples/multi-agent/) | A100 80GB | vLLM + CrewAI for agentic workflows |
+| [Invoke AI](./examples/invokeai/) | RTX 4090 | Stable Diffusion with a web interface |
 
 ## Common Commands
 
@@ -59,18 +63,45 @@ gpu dashboard
 
 ## Configuration
 
-Create a `gpu.toml` in your project:
+Create a `gpu.jsonc` in your project:
 
-```toml
-project_id = "my-project"
-provider = "runpod"
+```jsonc
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  "project_id": "my-project",
+  "provider": "runpod",
 
-# Sync outputs back to local machine
-outputs = ["output/", "models/"]
+  // Sync outputs back to local machine
+  "outputs": ["output/", "models/"],
 
-# GPU selection
-gpu_type = "NVIDIA GeForce RTX 4090"
+  // GPU selection
+  "gpu_type": "NVIDIA GeForce RTX 4090",
+  "min_vram": 24,
 
-[environment]
-base_image = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
+  // Optional: Persistent storage for models
+  // "network_volume_id": "YOUR_VOLUME_ID",
+
+  "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
+  }
+}
 ```
+
+### Network Volumes (Recommended)
+
+For faster startup and persistent model storage, use RunPod Network Volumes. See the [Network Volumes Guide](./docs/network-volumes.md) for setup instructions.
+
+## GPU Options
+
+| GPU | VRAM | Best For | Cost/hr |
+|-----|------|----------|---------|
+| RTX 4090 | 24GB | Image generation, LoRA training | ~$0.50 |
+| RTX 4080 | 16GB | SDXL, most workflows | ~$0.35 |
+| A100 40GB | 40GB | 70B models, video generation | ~$1.19 |
+| A100 80GB | 80GB | 70B+ models, large batch | ~$1.74 |
+| H100 80GB | 80GB | Maximum performance | ~$3.99 |
+
+## Documentation
+
+- [Network Volumes Guide](./docs/network-volumes.md) - Persistent storage for models
+- [GPU CLI Docs](https://gpu-cli.sh/docs) - Full documentation

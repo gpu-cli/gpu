@@ -1,0 +1,38 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // GPU CLI Configuration
+  // Multi-Agent Orchestration with vLLM + CrewAI/LangGraph
+  "project_id": "multi-agent",
+  "provider": "runpod",
+  "outputs": ["outputs/", "logs/"],
+
+  // 70B model requires ~40GB VRAM
+  "gpu_type": "NVIDIA A100 80GB PCIe",
+  "min_vram": 40,
+  "workspace_size_gb": 100,
+
+  // Network Volume for persistent model storage (recommended)
+  // Create a 150GB volume - Qwen 70B AWQ is ~40GB
+  // "network_volume_id": "YOUR_VOLUME_ID",
+
+  // Pre-download quantized Qwen 2.5 72B (excellent for agentic tasks)
+  "download": [
+    {
+      "strategy": "hf",
+      "source": "Qwen/Qwen2.5-72B-Instruct-AWQ"
+    }
+  ],
+
+  // Python dependencies (vLLM, CrewAI, LangChain)
+  "environment": {
+    "python": {
+      "requirements": "requirements.txt"
+    }
+  },
+
+  "template": {
+    "name": "Multi-Agent Orchestration",
+    "description": "vLLM inference server with CrewAI/LangGraph for agentic workflows",
+    "author": "gpu-cli"
+  }
+}

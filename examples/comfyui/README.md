@@ -25,6 +25,28 @@ gpu run --publish 8188:8188 python ComfyUI/main.py --listen 0.0.0.0
 
 If this occurs, open the remapped URL (e.g., `http://localhost:60984`), **not** `http://localhost:8188`.
 
+## Network Volume Setup (Recommended)
+
+For faster startup and persistent model storage, create a Network Volume:
+
+1. Go to [RunPod Storage](https://www.runpod.io/console/user/storage)
+2. Click **+ New Network Volume**
+3. Choose a datacenter with RTX 4090 availability (e.g., US-KS-2)
+4. Set size to **100GB** (enough for SDXL + LoRAs)
+5. Copy the **Volume ID** (e.g., `abc123xyz`)
+6. Add to your `gpu.jsonc`:
+
+```jsonc
+{
+  "network_volume_id": "YOUR_VOLUME_ID"
+}
+```
+
+**Benefits:**
+- Models download once, persist across sessions
+- ComfyUI setup is preserved
+- Faster pod startup (no re-download)
+
 ## What's Included
 
 The setup script installs these essential custom nodes:
@@ -114,24 +136,28 @@ Always use the **remapped port** shown in the terminal output, not 8188.
 
 ### Pod stopped unexpectedly
 
-GPU CLI auto-stops pods after 5 minutes of inactivity to save costs. Just run the start command again - your models and setup persist.
+GPU CLI auto-stops pods after 5 minutes of inactivity to save costs. Just run the start command again - your models and setup persist (especially with Network Volumes).
 
 ## Configuration
 
-The `gpu.toml` file configures the remote environment:
+The `gpu.jsonc` file configures the remote environment:
 
-```toml
-project_id = "comfyui"
-provider = "runpod"
+```jsonc
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  "project_id": "comfyui",
+  "provider": "runpod",
+  "outputs": ["ComfyUI/output/"],
+  "gpu_type": "NVIDIA GeForce RTX 4090",
+  "min_vram": 24,
 
-# Files synced back to your machine
-outputs = ["ComfyUI/output/"]
+  // Optional: Persistent storage for models
+  // "network_volume_id": "YOUR_VOLUME_ID",
 
-# GPU selection (RTX 4090 recommended for SDXL)
-gpu_type = "NVIDIA GeForce RTX 4090"
-
-[environment]
-base_image = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
+  "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
+  }
+}
 ```
 
 ### GPU Options
@@ -147,7 +173,7 @@ base_image = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
 
 ```
 comfyui/
-├── gpu.toml           # GPU CLI configuration
+├── gpu.jsonc          # GPU CLI configuration
 ├── setup_comfyui.py   # Setup script (run once)
 ├── README.md          # This file
 └── ComfyUI/           # Created by setup (gitignored)

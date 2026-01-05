@@ -1,7 +1,0 @@
-project_id = "comfyui"
-provider = "runpod"
-outputs = ["ComfyUI/output/"]
-gpu_type = "NVIDIA GeForce RTX 4090"
-
-[environment]
-base_image = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"

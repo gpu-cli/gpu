@@ -1,0 +1,14 @@
+# Multi-Agent Orchestration Dependencies
+
+# vLLM for fast LLM inference
+vllm>=0.6.0
+
+# CrewAI for multi-agent orchestration
+crewai>=0.70.0
+
+# LangChain for LLM integration
+langchain>=0.2.0
+langchain-openai>=0.1.0
+
+# Optional: LangGraph for advanced workflows
+langgraph>=0.2.0

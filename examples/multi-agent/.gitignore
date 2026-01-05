@@ -1,0 +1,13 @@
+# Generated outputs
+outputs/
+logs/
+
+# Model cache
+.cache/
+
+# Python
+__pycache__/
+*.pyc
+
+# GPU CLI runtime
+.gpu/
