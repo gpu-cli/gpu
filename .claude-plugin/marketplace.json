@@ -1,0 +1,25 @@
+{
+  "name": "gpu-cli",
+  "owner": {
+    "name": "GPU CLI",
+    "email": "hello@gpu-cli.sh"
+  },
+  "metadata": {
+    "description": "Run NVIDIA GPU workloads from your Mac with GPU CLI"
+  },
+  "plugins": [
+    {
+      "name": "gpu-cli",
+      "source": "./",
+      "description": "Transform natural language into complete ML workflows - training, inference, media processing, and more.",
+      "version": "2.0.0",
+      "author": {
+        "name": "GPU CLI",
+        "email": "hello@gpu-cli.sh"
+      },
+      "homepage": "https://gpu-cli.sh",
+      "repository": "https://github.com/gpu-cli/gpu",
+      "license": "MIT"
+    }
+  ]
+}
