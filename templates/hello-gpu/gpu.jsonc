@@ -1,0 +1,12 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  "template": {
+    "name": "Hello GPU",
+    "description": "A minimal test template to verify GPU CLI template cloning works",
+    "author": "gpu-cli"
+  },
+  "gpu_type": "NVIDIA GeForce RTX 4090",
+  "min_vram": 8,
+  "outputs": ["outputs/"],
+  "startup": "python hello.py"
+}
