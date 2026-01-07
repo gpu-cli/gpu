@@ -1,0 +1,30 @@
+{
+  "name": "gpu-cli",
+  "version": "2.0.0",
+  "description": "Run NVIDIA GPU workloads from your Mac with GPU CLI. Transform natural language into complete ML workflows - training, inference, media processing, and more. Includes intelligent GPU selection, cost optimization, and debugging.",
+  "author": {
+    "name": "GPU CLI",
+    "email": "hello@gpu-cli.sh",
+    "url": "https://gpu-cli.sh"
+  },
+  "homepage": "https://gpu-cli.sh",
+  "repository": "https://github.com/gpu-cli/gpu",
+  "license": "MIT",
+  "keywords": [
+    "gpu",
+    "cloud-gpu",
+    "nvidia",
+    "cuda",
+    "machine-learning",
+    "llm",
+    "stable-diffusion",
+    "comfyui",
+    "training",
+    "inference",
+    "whisper",
+    "runpod",
+    "mac"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/"
+}
