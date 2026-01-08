@@ -18,6 +18,33 @@ import sys
 from pathlib import Path
 
 
+def create_spaces_mock_file(directory: Path) -> Path:
+    """
+    Create a mock 'spaces' module file to replace HuggingFace's infrastructure-only module.
+
+    The 'spaces' module provides @spaces.GPU decorator on HuggingFace Spaces.
+    This mock makes it a no-op so Spaces can run outside HuggingFace infrastructure.
+    """
+    mock_content = '''"""
+Mock 'spaces' module for running HuggingFace Spaces outside their infrastructure.
+"""
+
+def GPU(func=None, duration=None):
+    """Mock @spaces.GPU decorator - just returns the function unchanged."""
+    if func is not None:
+        return func
+    def decorator(fn):
+        return fn
+    return decorator
+
+# Lowercase alias
+gpu = GPU
+'''
+    mock_path = directory / "spaces.py"
+    mock_path.write_text(mock_content)
+    return mock_path
+
+
 # Common Gradio entry point files in order of priority
 ENTRY_POINTS = [
     "app.py",
@@ -204,6 +231,14 @@ Examples:
     # Set environment for remote access
     os.environ["GRADIO_SERVER_NAME"] = "0.0.0.0"
     os.environ["GRADIO_SERVER_PORT"] = str(args.port)
+
+    # Create mock 'spaces' module in the space directory
+    # This replaces HuggingFace's infrastructure-only module
+    create_spaces_mock_file(space_path)
+
+    # Add space directory to PYTHONPATH so the mock 'spaces' module is found first
+    python_path = os.environ.get("PYTHONPATH", "")
+    os.environ["PYTHONPATH"] = str(space_path) + (os.pathsep + python_path if python_path else "")
 
     # Change to space directory
     os.chdir(space_path)

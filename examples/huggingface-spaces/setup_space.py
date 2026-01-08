@@ -80,11 +80,46 @@ def install_requirements(space_path: Path) -> None:
         return
 
     print("Installing dependencies from requirements.txt...")
-    subprocess.run(
+
+    # First, try bulk install (fast path) - stream output so user sees progress
+    result = subprocess.run(
         [sys.executable, "-m", "pip", "install", "-r", str(requirements_file)],
-        check=True,
     )
-    print("Dependencies installed successfully")
+
+    if result.returncode == 0:
+        print("Dependencies installed successfully")
+        return
+
+    # Bulk install failed - fall back to one-by-one installation
+    print("\nBulk install failed, trying packages individually...")
+
+    failed_packages = []
+    with open(requirements_file) as f:
+        for line in f:
+            line = line.strip()
+            # Skip empty lines and comments
+            if not line or line.startswith("#") or line.startswith("-"):
+                continue
+
+            pkg_result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", line],
+                capture_output=True,
+                text=True,
+            )
+
+            if pkg_result.returncode != 0:
+                failed_packages.append(line)
+                print(f"  Warning: Failed to install {line}")
+            else:
+                print(f"  Installed: {line}")
+
+    if failed_packages:
+        print(f"\nWarning: {len(failed_packages)} package(s) failed to install:")
+        for pkg in failed_packages:
+            print(f"  - {pkg}")
+        print("The Space may still work if these are optional dependencies.\n")
+    else:
+        print("Dependencies installed successfully")
 
 
 def run_setup_scripts(space_path: Path) -> None:
