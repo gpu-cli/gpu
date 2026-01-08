@@ -1,0 +1,30 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // GPU CLI Configuration
+  // HuggingFace Spaces Development - Clone, test, and run any HF Space with GPU
+  "project_id": "huggingface-spaces",
+  "provider": "runpod",
+  "outputs": ["outputs/", "exports/"],
+
+  // A100 80GB recommended for most GPU-intensive Spaces
+  // Covers models like Hunyuan3D (29GB), large diffusion models, LLMs
+  "gpu_type": "NVIDIA A100 80GB PCIe",
+  "min_vram": 40,
+  "workspace_size_gb": 150,
+
+  // Network Volume for persistent model storage (highly recommended)
+  // Many Spaces download large models - persist them across sessions
+  // "network_volume_id": "YOUR_VOLUME_ID",
+
+  "environment": {
+    "python": {
+      "requirements": "requirements.txt"
+    }
+  },
+
+  "template": {
+    "name": "HuggingFace Spaces Development",
+    "description": "Clone, test, and develop HuggingFace Spaces with GPU support",
+    "author": "gpu-cli"
+  }
+}
