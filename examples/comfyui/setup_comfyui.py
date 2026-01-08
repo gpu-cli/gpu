@@ -8,9 +8,14 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 comfyui_dir = os.path.join(script_dir, "ComfyUI")
 custom_nodes_dir = os.path.join(comfyui_dir, "custom_nodes")
 
-# Clone ComfyUI
-if not os.path.exists(comfyui_dir):
+# Clone ComfyUI (check for requirements.txt to handle partial/empty directories)
+comfyui_requirements = os.path.join(comfyui_dir, "requirements.txt")
+if not os.path.exists(comfyui_requirements):
     print("Cloning ComfyUI...")
+    # Remove empty directory if it exists (from sync)
+    if os.path.exists(comfyui_dir):
+        import shutil
+        shutil.rmtree(comfyui_dir)
     subprocess.run(
         ["git", "clone", "https://github.com/comfyanonymous/ComfyUI.git", comfyui_dir],
         check=True,
@@ -22,7 +27,6 @@ subprocess.run(
     ["pip", "install", "-r", os.path.join(comfyui_dir, "requirements.txt")],
     check=True,
 )
-subprocess.run(["pip", "install", "--force-reinstall", "torchaudio"], check=True)
 
 # Essential custom nodes
 CUSTOM_NODES = [
