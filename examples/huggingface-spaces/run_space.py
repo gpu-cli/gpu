@@ -18,6 +18,40 @@ import sys
 from pathlib import Path
 
 
+def patch_huggingface_env(space_path: Path) -> None:
+    """
+    Patch Space files to disable HuggingFace-specific environment setup.
+
+    Many Spaces have hardcoded `ENV = "Huggingface"` which triggers setup code
+    that only works on HuggingFace infrastructure (e.g., installing cp310 wheels
+    when we're running cp311). This patches those checks to skip HF-specific setup.
+    """
+    # Common patterns to patch
+    patterns = [
+        # Pattern: ENV = "Huggingface" -> ENV = "Local"
+        ('ENV = "Huggingface"', 'ENV = "Local"'),
+        ("ENV = 'Huggingface'", "ENV = 'Local'"),
+        # Pattern: ENV == "Huggingface" check (comment it out)
+        # We handle this via the ENV variable change above
+    ]
+
+    # Find Python files that might have HuggingFace-specific code
+    for py_file in space_path.glob("*.py"):
+        try:
+            content = py_file.read_text()
+            original_content = content
+
+            for old, new in patterns:
+                if old in content:
+                    content = content.replace(old, new)
+                    print(f"  Patched {py_file.name}: {old} -> {new}")
+
+            if content != original_content:
+                py_file.write_text(content)
+        except Exception as e:
+            print(f"  Warning: Could not patch {py_file.name}: {e}")
+
+
 def create_spaces_mock_file(directory: Path) -> Path:
     """
     Create a mock 'spaces' module file to replace HuggingFace's infrastructure-only module.
@@ -27,9 +61,16 @@ def create_spaces_mock_file(directory: Path) -> Path:
     """
     mock_content = '''"""
 Mock 'spaces' module for running HuggingFace Spaces outside their infrastructure.
-"""
 
-def GPU(func=None, duration=None):
+Provides no-op implementations of:
+- spaces.GPU / spaces.gpu - GPU decorator
+- spaces.zero - ZeroGPU module
+- spaces.zero.GPU - ZeroGPU decorator
+- spaces.zero.torch - Torch utilities
+"""
+import types
+
+def GPU(func=None, duration=None, **kwargs):
     """Mock @spaces.GPU decorator - just returns the function unchanged."""
     if func is not None:
         return func
@@ -39,6 +80,21 @@ def GPU(func=None, duration=None):
 
 # Lowercase alias
 gpu = GPU
+
+# Create zero submodule for ZeroGPU compatibility
+zero = types.ModuleType("spaces.zero")
+zero.GPU = GPU
+zero.gpu = GPU
+
+# Create zero.torch submodule
+zero_torch = types.ModuleType("spaces.zero.torch")
+zero_torch.GPU = GPU
+zero.torch = zero_torch
+
+# Register submodules so "from spaces import zero" works
+import sys
+sys.modules["spaces.zero"] = zero
+sys.modules["spaces.zero.torch"] = zero_torch
 '''
     mock_path = directory / "spaces.py"
     mock_path.write_text(mock_content)
@@ -231,6 +287,19 @@ Examples:
     # Set environment for remote access
     os.environ["GRADIO_SERVER_NAME"] = "0.0.0.0"
     os.environ["GRADIO_SERVER_PORT"] = str(args.port)
+
+    # Patch HuggingFace-specific environment checks
+    # This disables HF-only setup code that won't work locally
+    print("Patching HuggingFace-specific code...")
+    patch_huggingface_env(space_path)
+
+    # Fix NumPy version - many Spaces require NumPy 1.x but other packages may upgrade to 2.x
+    # This causes "A module that was compiled using NumPy 1.x cannot be run in NumPy 2.x" errors
+    print("Ensuring NumPy 1.x compatibility...")
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "numpy<2", "-q"],
+        capture_output=True,
+    )
 
     # Create mock 'spaces' module in the space directory
     # This replaces HuggingFace's infrastructure-only module
