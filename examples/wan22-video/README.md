@@ -134,7 +134,7 @@ The `gpu.jsonc` file:
   "project_id": "wan22-video",
   "provider": "runpod",
   "outputs": ["outputs/"],
-  "gpu_type": "NVIDIA A100 80GB",
+  "gpu_type": "NVIDIA A100 80GB PCIe",
   "min_vram": 40,
 
   // Pre-download model

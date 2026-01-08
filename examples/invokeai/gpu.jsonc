@@ -6,6 +6,7 @@
   "provider": "runpod",
   "outputs": ["invokeai/outputs/"],
   "gpu_type": "NVIDIA GeForce RTX 4090",
+  "min_vram": 24,
 
   // Optional: Persistent storage for models (recommended)
   // Create a Network Volume in RunPod and add the ID here

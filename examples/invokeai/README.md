@@ -92,16 +92,17 @@ Always use the **remapped port** shown in the terminal output, not 9090.
 
 ## Configuration
 
-The `gpu.toml` file configures the remote environment:
+The `gpu.jsonc` file configures the remote environment:
 
-```toml
-project_id = "invokeai"
-provider = "runpod"
-outputs = ["invokeai/outputs/"]
-gpu_type = "NVIDIA GeForce RTX 4090"
-
-[environment]
-base_image = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
+```jsonc
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  "project_id": "invokeai",
+  "provider": "runpod",
+  "outputs": ["invokeai/outputs/"],
+  "gpu_type": "NVIDIA GeForce RTX 4090",
+  "min_vram": 24
+}
 ```
 
 ### GPU Options
@@ -117,7 +118,7 @@ base_image = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
 
 ```
 invokeai/
-├── gpu.toml            # GPU CLI configuration
+├── gpu.jsonc           # GPU CLI configuration
 ├── setup_invokeai.py   # Setup script (run once)
 ├── run_invokeai.py     # Run script (starts server)
 ├── README.md           # This file

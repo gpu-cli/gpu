@@ -240,7 +240,7 @@ The `gpu.jsonc` file:
   "project_id": "multi-agent",
   "provider": "runpod",
   "outputs": ["outputs/", "logs/"],
-  "gpu_type": "NVIDIA A100 80GB",
+  "gpu_type": "NVIDIA A100 80GB PCIe",
   "min_vram": 40,
 
   "download": [

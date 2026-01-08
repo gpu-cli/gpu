@@ -6,9 +6,9 @@
   "provider": "runpod",
   "outputs": ["outputs/"],
 
-  // Wan 2.2 14B requires 80GB VRAM (per HuggingFace docs)
+  // Wan 2.2 14B requires ~40GB VRAM (A100 80GB recommended for headroom)
   "gpu_type": "NVIDIA A100 80GB PCIe",
-  "min_vram": 80,
+  "min_vram": 40,
   "workspace_size_gb": 100,
 
   // Network Volume for persistent model storage (recommended)
