@@ -191,6 +191,23 @@ Some Spaces have complex dependencies. Check for:
 gpu run bash -c "apt-get update && apt-get install -y ffmpeg && python run_space.py"
 ```
 
+### Custom CUDA extensions
+
+Some Spaces (like Hunyuan3D-2.1) include custom CUDA extensions compiled for HuggingFace's specific environment. The template handles these in two ways:
+
+1. **Automatic build from source**: For known Spaces like Hunyuan3D, the setup script automatically builds extensions from source during `setup_space.py`.
+
+2. **Graceful degradation**: If an extension can't be loaded, the Space will still run with reduced functionality rather than crashing. You'll see warnings like:
+   ```
+   Warning: custom_rasterizer unavailable (...)
+   Texture generation will be limited.
+   ```
+
+For full functionality with Spaces that have custom CUDA extensions, ensure you:
+- Use the recommended A100 80GB GPU (CUDA 12.4 compatible)
+- Run `setup_space.py` to build extensions from source
+- Check for any compilation errors in the setup output
+
 ### Entry point not detected
 
 If the script can't find the entry point:

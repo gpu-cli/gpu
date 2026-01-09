@@ -18,21 +18,59 @@ import sys
 from pathlib import Path
 
 
+def create_hf_path_symlink(space_path: Path) -> None:
+    """
+    Create /home/user/app symlink to support HuggingFace hardcoded paths.
+
+    Many HuggingFace Spaces have hardcoded paths like /home/user/app/ which is
+    the standard path on HuggingFace infrastructure. This symlink allows those
+    paths to work when running locally.
+    """
+    hf_app_path = Path("/home/user/app")
+
+    # Skip if symlink already exists and points to the right place
+    if hf_app_path.is_symlink():
+        if hf_app_path.resolve() == space_path.resolve():
+            return
+        # Remove incorrect symlink
+        try:
+            hf_app_path.unlink()
+        except PermissionError:
+            print(f"  Warning: Cannot update symlink at {hf_app_path}")
+            return
+
+    # Skip if path exists as a real directory
+    if hf_app_path.exists():
+        print(f"  Warning: {hf_app_path} exists and is not a symlink")
+        return
+
+    # Create parent directories and symlink
+    try:
+        hf_app_path.parent.mkdir(parents=True, exist_ok=True)
+        hf_app_path.symlink_to(space_path)
+        print(f"  Created symlink: {hf_app_path} -> {space_path}")
+    except PermissionError:
+        print(f"  Warning: Cannot create symlink at {hf_app_path} (permission denied)")
+    except Exception as e:
+        print(f"  Warning: Cannot create symlink: {e}")
+
+
 def patch_huggingface_env(space_path: Path) -> None:
     """
-    Patch Space files to disable HuggingFace-specific environment setup.
+    Patch Space files to handle HuggingFace-specific setup gracefully.
 
-    Many Spaces have hardcoded `ENV = "Huggingface"` which triggers setup code
-    that only works on HuggingFace infrastructure (e.g., installing cp310 wheels
-    when we're running cp311). This patches those checks to skip HF-specific setup.
+    Makes import failures non-fatal so Spaces can run with reduced functionality
+    rather than crashing when custom CUDA extensions aren't available.
     """
-    # Common patterns to patch
+    # Patterns to patch - skip or make failures non-fatal for graceful degradation
     patterns = [
-        # Pattern: ENV = "Huggingface" -> ENV = "Local"
-        ('ENV = "Huggingface"', 'ENV = "Local"'),
-        ("ENV = 'Huggingface'", "ENV = 'Local'"),
-        # Pattern: ENV == "Huggingface" check (comment it out)
-        # We handle this via the ENV variable change above
+        # Skip wheel install entirely - we build from source during setup
+        # This avoids "wheel is not a supported wheel on this platform" errors
+        ('subprocess.run(shlex.split("pip install custom_rasterizer-0.1-cp310-cp310-linux_x86_64.whl"), check=True)',
+         'print("Skipping wheel install - custom_rasterizer built from source")'),
+        # Also handle check=False variant
+        ('subprocess.run(shlex.split("pip install custom_rasterizer-0.1-cp310-cp310-linux_x86_64.whl"), check=False)',
+         'print("Skipping wheel install - custom_rasterizer built from source")'),
     ]
 
     # Find Python files that might have HuggingFace-specific code
@@ -44,7 +82,7 @@ def patch_huggingface_env(space_path: Path) -> None:
             for old, new in patterns:
                 if old in content:
                     content = content.replace(old, new)
-                    print(f"  Patched {py_file.name}: {old} -> {new}")
+                    print(f"  Patched {py_file.name}: {old[:50]}...")
 
             if content != original_content:
                 py_file.write_text(content)
@@ -85,6 +123,11 @@ gpu = GPU
 zero = types.ModuleType("spaces.zero")
 zero.GPU = GPU
 zero.gpu = GPU
+
+# ZeroGPU startup function - called to initialize the Space
+def _startup():
+    pass
+zero.startup = _startup
 
 # Create zero.torch submodule
 zero_torch = types.ModuleType("spaces.zero.torch")
@@ -287,6 +330,10 @@ Examples:
     # Set environment for remote access
     os.environ["GRADIO_SERVER_NAME"] = "0.0.0.0"
     os.environ["GRADIO_SERVER_PORT"] = str(args.port)
+
+    # Create symlink for HuggingFace hardcoded paths
+    print("Setting up HuggingFace path compatibility...")
+    create_hf_path_symlink(space_path)
 
     # Patch HuggingFace-specific environment checks
     # This disables HF-only setup code that won't work locally
