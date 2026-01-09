@@ -37,6 +37,8 @@ CUSTOM_NODES = [
     ("ComfyUI-Advanced-ControlNet", "https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git"),
     ("ComfyUI_Comfyroll_CustomNodes", "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git"),
     ("sdxl_prompt_styler", "https://github.com/twri/sdxl_prompt_styler.git"),
+    # Qwen Image Edit support
+    ("Comfyui-QwenEditUtils", "https://github.com/lrzjason/Comfyui-QwenEditUtils.git"),
 ]
 
 # Install custom nodes
