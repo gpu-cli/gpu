@@ -1,21 +1,44 @@
 #!/usr/bin/env python3
-"""Run script for InvokeAI server."""
+"""
+Run script for InvokeAI server.
 
-import sys
+Usage:
+    gpu run --publish 9090:9090 python run_invokeai.py
+    gpu run --publish 9090:9090 python run_invokeai.py --port 8080
+"""
+
+import argparse
 import os
+import subprocess
+from pathlib import Path
 
-# Set InvokeAI root directory
-script_dir = os.path.dirname(os.path.abspath(__file__))
-invokeai_root = os.path.join(script_dir, "invokeai")
-os.environ["INVOKEAI_ROOT"] = invokeai_root
 
-# Ensure directories exist
-os.makedirs(invokeai_root, exist_ok=True)
-os.makedirs(os.path.join(invokeai_root, "outputs"), exist_ok=True)
+def main():
+    parser = argparse.ArgumentParser(description="Run InvokeAI server")
+    parser.add_argument("--host", default="0.0.0.0", help="Listen host")
+    parser.add_argument("--port", type=int, default=9090, help="Listen port")
+    args = parser.parse_args()
 
-print(f"INVOKEAI_ROOT: {invokeai_root}")
-print("Starting InvokeAI server...")
+    # Setup paths
+    script_dir = Path(__file__).parent.absolute()
+    invokeai_root = script_dir / "invokeai"
 
-# Import and run InvokeAI directly (keeps process alive)
-from invokeai.app.run_app import run_app
-run_app()
+    # Create directories
+    invokeai_root.mkdir(exist_ok=True)
+    (invokeai_root / "outputs").mkdir(exist_ok=True)
+
+    # Set environment variables for InvokeAI
+    # Note: invokeai-web uses env vars, not CLI args for host/port
+    os.environ["INVOKEAI_ROOT"] = str(invokeai_root)
+    os.environ["INVOKEAI_HOST"] = args.host
+    os.environ["INVOKEAI_PORT"] = str(args.port)
+
+    print(f"INVOKEAI_ROOT: {invokeai_root}")
+    print(f"Starting InvokeAI on {args.host}:{args.port}")
+
+    # Run InvokeAI
+    subprocess.run(["invokeai-web", "--root", str(invokeai_root)], check=True)
+
+
+if __name__ == "__main__":
+    main()
