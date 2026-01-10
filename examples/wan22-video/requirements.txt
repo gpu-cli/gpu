@@ -1,7 +1,0 @@
-# Wan 2.2 Video Generation Dependencies
-torch>=2.1.0
-diffusers>=0.30.0
-transformers>=4.40.0
-accelerate>=0.30.0
-safetensors>=0.4.0
-imageio[ffmpeg]>=2.34.0
