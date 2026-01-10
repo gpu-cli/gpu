@@ -1,0 +1,4 @@
+invokeai/
+__pycache__/
+*.pyc
+.gpu/
