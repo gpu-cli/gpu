@@ -1,0 +1,37 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // GPU CLI Configuration
+  // InvokeAI with BiRefNet background removal node pre-installed
+  "project_id": "background-removal",
+  "provider": "runpod",
+  "gpu_type": "NVIDIA RTX 6000 Ada Generation",
+  "min_vram": 24,
+  "workspace_size_gb": 60,
+  "outputs": ["invokeai/outputs/"],
+
+  // Environment setup - runs during pod provisioning
+  "environment": {
+    "system": {
+      "apt": [{ "name": "git" }]
+    },
+    "shell": {
+      "steps": [
+        // Install InvokeAI with xformers + BiRefNet dependencies
+        {
+          "run": "pip install invokeai[xformers] timm kornia -q",
+          "only_once": true,
+          "timeout_sec": 600
+        }
+      ]
+    }
+  },
+
+  // Keep pod alive for 60 min after idle (model loading takes time)
+  "cooldown_minutes": 60,
+
+  "template": {
+    "name": "Background Removal (InvokeAI + BiRefNet)",
+    "description": "InvokeAI with BiRefNet background removal node pre-installed",
+    "author": "gpu-cli"
+  }
+}

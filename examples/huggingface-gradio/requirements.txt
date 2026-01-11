@@ -1,0 +1,19 @@
+# HuggingFace Gradio Space Runner - Base Dependencies
+# Space-specific deps are installed from the downloaded Space's requirements.txt
+
+# Core - Gradio and HuggingFace Hub
+gradio>=4.0.0
+spaces>=0.20.0
+huggingface_hub>=0.20.0
+
+# ML fundamentals (most Spaces need these)
+torch>=2.0.0
+transformers>=4.35.0
+accelerate>=0.25.0
+
+# Common utilities
+Pillow>=10.0.0
+opencv-python>=4.8.0
+numpy<2.0.0
+tqdm>=4.60.0
+requests>=2.25.0

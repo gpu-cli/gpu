@@ -1,0 +1,63 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  "project_id": "huggingface-gradio",
+  "provider": "runpod",
+
+  // Template metadata
+  "template": {
+    "name": "HuggingFace Gradio Space Runner",
+    "description": "Run any public Gradio-based HuggingFace Space on cloud GPUs",
+    "author": "gpu-cli"
+  },
+
+  // Interactive input for Space ID
+  "inputs": [
+    {
+      "type": "text",
+      "key": "space_id",
+      "label": "HuggingFace Space ID",
+      "description": "Public Gradio Space (e.g., Lightricks/ltx-video-distilled)",
+      "placeholder": "owner/space-name",
+      "required": true
+    }
+  ],
+
+  // GPU: A100 80GB for large models like LTX Video 13B
+  // For smaller Spaces, can use: "NVIDIA GeForce RTX 4090" with min_vram: 24
+  "docker_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+  "gpu_type": "NVIDIA A100-SXM4-80GB",
+  "min_vram": 40,
+  "workspace_size_gb": 150,
+
+  // Keep pod alive for 60 min after idle (model loading takes time)
+  "cooldown_minutes": 60,
+
+  // No output sync - interactive use only
+  "outputs": [],
+
+  // Startup: uses ${space_id} substitution from inputs
+  // Runs setup (download/install) then launches the Space
+  "startup": "python setup.py ${space_id} && python run.py ${space_id}",
+
+  // Environment: install base requirements, common system packages
+  "environment": {
+    "system": {
+      "apt": [
+        { "name": "git" },
+        { "name": "git-lfs" },
+        { "name": "ffmpeg" },
+        { "name": "libgl1-mesa-glx" },
+        { "name": "libglib2.0-0" }
+      ]
+    },
+    "shell": {
+      "steps": [
+        {
+          "run": "pip install -r requirements.txt -q",
+          "only_once": true,
+          "timeout_sec": 300
+        }
+      ]
+    }
+  }
+}

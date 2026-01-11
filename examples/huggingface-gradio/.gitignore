@@ -1,0 +1,33 @@
+# Downloaded HuggingFace Spaces
+spaces/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+dist/
+build/
+
+# GPU CLI state
+.gpu/
+.gpu-local/
+
+# HuggingFace cache
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Outputs (if any)
+outputs/

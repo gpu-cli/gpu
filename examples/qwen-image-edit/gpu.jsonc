@@ -1,0 +1,46 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // GPU CLI Configuration
+  // ComfyUI with workflow preloading - specify any ComfyUI workflow URL
+  "project_id": "qwen-image-edit",
+  "provider": "runpod",
+  "gpu_type": "NVIDIA GeForce RTX 4090",
+  "min_vram": 24,
+  "workspace_size_gb": 150,
+  "outputs": ["ComfyUI/output/", "ComfyUI/user/"],
+
+  // Workflow URL - setup.py downloads this and all required models
+  // Change this to use a different ComfyUI workflow
+  "workflow": "https://raw.githubusercontent.com/Comfy-Org/workflow_templates/refs/heads/main/templates/image_qwen_image_edit.json",
+
+  // Environment setup - runs during pod provisioning
+  "environment": {
+    "system": {
+      "apt": [{ "name": "git" }]
+    },
+    "shell": {
+      "steps": [
+        // Upgrade PyTorch (ComfyUI requires 2.4+ for torch.library.custom_op)
+        {
+          "run": "pip install torch>=2.4.0 torchvision --index-url https://download.pytorch.org/whl/cu121 -q",
+          "only_once": true,
+          "timeout_sec": 600
+        },
+        // Pin NumPy<2 for compatibility + install setup script dependencies
+        {
+          "run": "pip install 'numpy<2' tqdm requests 'huggingface_hub[cli]' -q",
+          "only_once": true
+        }
+      ]
+    }
+  },
+
+   // Keep pod alive for 60 min after idle (model loading takes time)
+   "cooldown_minutes": 60,
+
+  "template": {
+    "name": "ComfyUI + Qwen Image Edit",
+    "description": "ComfyUI with workflow preloading - downloads workflow and required models automatically",
+    "author": "gpu-cli"
+  }
+}
