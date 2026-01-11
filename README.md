@@ -19,12 +19,9 @@ gpu run python train.py   # remote GPU
 
 ```bash
 # 1. Install GPU CLI
-curl -fsSL https://gpu-cli.sh | sh
+curl -fsSL https://gpu-cli.sh/install.sh | sh
 
-# 2. Authenticate with RunPod
-gpu auth login
-
-# 3. Run your code on a remote GPU
+# 2. Run your code on a remote GPU
 gpu run python train.py
 ```
 
@@ -33,16 +30,6 @@ gpu run python train.py
 ## Claude Code Plugin
 
 This repo includes a Claude Code plugin that supercharges GPU CLI with AI assistance. Describe what you want in plain English, and Claude generates complete, runnable GPU workflows.
-
-### Install the Plugin
-
-```bash
-# Add the GPU CLI marketplace
-claude mcp add-json gpu-cli '{"command": "npx", "args": ["-y", "@anthropic/plugin-gpu-cli"]}'
-
-# Or install directly from this repo
-claude --plugin-dir /path/to/this/repo
-```
 
 ### What's Included
 
