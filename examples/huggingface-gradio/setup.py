@@ -301,9 +301,20 @@ def main() -> None:
     log(f"Space found: {space_info['id']}")
     log(f"SDK: {space_info.get('sdk', 'unknown')}")
 
-    if space_info.get("sdk") != "gradio":
-        log(f"Warning: Space SDK is '{space_info.get('sdk')}', not 'gradio'")
-        log("This template is designed for Gradio Spaces")
+    sdk = space_info.get("sdk")
+    if sdk and sdk != "gradio":
+        log(f"Error: Space '{space_id}' uses '{sdk}' SDK, not Gradio.")
+        log("")
+        log("This template only supports Gradio-based Spaces.")
+        log("")
+        alternatives = {
+            "streamlit": "For Streamlit Spaces: streamlit run app.py",
+            "docker": "Docker Spaces require custom container setup",
+            "static": "Static Spaces are HTML-only, no Python needed",
+        }
+        if sdk in alternatives:
+            log(alternatives[sdk])
+        sys.exit(1)
 
     # Step 2: Download Space
     print_step(2, total_steps, "Downloading Space")

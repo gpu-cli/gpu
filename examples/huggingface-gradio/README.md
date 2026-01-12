@@ -1,6 +1,8 @@
 # HuggingFace Gradio Space Runner
 
-Run any public Gradio-based HuggingFace Space on cloud GPUs with two simple commands.
+Run any public **Gradio-based** HuggingFace Space on cloud GPUs with two simple commands.
+
+> **Note:** This template only supports **Gradio** Spaces. Streamlit, Docker, and Static Spaces are not supported.
 
 ## Quick Start
 
@@ -8,11 +10,11 @@ Run any public Gradio-based HuggingFace Space on cloud GPUs with two simple comm
 # 1. Setup (downloads Space and dependencies)
 gpu run python setup.py Lightricks/ltx-video-distilled
 
-# 2. Run the Space (with port forwarding to localhost:7860)
-gpu run -p 7860:7860 python run.py Lightricks/ltx-video-distilled
+# 2. Run the Space
+gpu run python run.py Lightricks/ltx-video-distilled
 ```
 
-Open http://localhost:7860 in your browser to access the Space.
+Look for the `Running on public URL: https://xxxxx.gradio.live` line in the output and open that URL in your browser.
 
 ## How It Works
 
@@ -28,11 +30,12 @@ This template uses a two-phase architecture:
 **Phase 2 - Run (`run.py`):**
 1. Validates setup is complete
 2. Finds the Gradio entry point (app.py, main.py, etc.)
-3. Sets environment variables for remote access
-4. Launches the Gradio application
+3. Creates a `spaces` module mock for ZeroGPU compatibility
+4. Sets environment variables for remote access
+5. Launches the Gradio application
 
-The `@spaces.GPU` decorator is effect-free outside ZeroGPU environments,
-so Spaces run natively without any patching or mocking.
+The `@spaces.GPU` decorator (used by many Spaces for ZeroGPU) is mocked locally
+to be a no-op, allowing Spaces to run on standard GPU infrastructure.
 
 ## Tested Spaces
 
@@ -49,7 +52,7 @@ For private Spaces, set `HF_TOKEN` before running:
 ```bash
 export HF_TOKEN=hf_xxxx
 gpu run python setup.py owner/private-space
-gpu run -p 7860:7860 python run.py owner/private-space
+gpu run python run.py owner/private-space
 ```
 
 Or authenticate via CLI:
@@ -57,7 +60,7 @@ Or authenticate via CLI:
 ```bash
 huggingface-cli login
 gpu run python setup.py owner/private-space
-gpu run -p 7860:7860 python run.py owner/private-space
+gpu run python run.py owner/private-space
 ```
 
 ## Configuration
@@ -65,7 +68,7 @@ gpu run -p 7860:7860 python run.py owner/private-space
 Default settings in `gpu.jsonc`:
 - **GPU**: NVIDIA A100-SXM4-80GB (80GB VRAM) - required for large models like LTX Video 13B
 - **Workspace**: 150GB
-- **Port forwarding**: Use `-p 7860:7860` flag (Gradio default port)
+- **Access**: Public `gradio.live` URL (automatic, no port forwarding needed)
 
 For smaller Spaces (<24GB VRAM), edit `gpu.jsonc`:
 
@@ -98,6 +101,21 @@ gpu run python setup.py Lightricks/ltx-video-distilled
 ```
 
 ## Troubleshooting
+
+### "Space uses 'streamlit' SDK, not Gradio"
+
+This template only supports **Gradio** Spaces. If you see this error:
+
+```
+Error: Space 'owner/space' uses 'streamlit' SDK, not Gradio.
+This template only supports Gradio-based Spaces.
+For Streamlit Spaces: streamlit run app.py
+```
+
+The Space uses a different SDK. Alternatives:
+- **Streamlit**: Clone manually and run `streamlit run app.py`
+- **Docker**: Requires container setup, not supported here
+- **Static**: HTML-only Spaces, no Python needed
 
 ### Space not accessible remotely
 
@@ -160,12 +178,8 @@ gpu run python setup.py owner/space-name
 ### Port varies by Space
 
 Different Spaces may use different ports. Common ports are 7860 and 7861.
-Check the Space's output for the actual port and adjust the `-p` flag:
-
-```bash
-# For port 7861
-gpu run -p 7861:7861 python run.py owner/space-name
-```
+The `gradio.live` URL handles port forwarding automatically, so this shouldn't affect you.
+Check the Space's output for the actual port if you need to debug locally.
 
 ## Files
 

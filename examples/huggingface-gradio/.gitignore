@@ -1,6 +1,9 @@
 # Downloaded HuggingFace Spaces
 spaces/
 
+# Patched entry points (created by run.py)
+_patched_*.py
+
 # Python
 __pycache__/
 *.pyc

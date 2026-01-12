@@ -3,8 +3,8 @@
 
 # Core - Gradio and HuggingFace Hub
 gradio>=4.0.0
-spaces>=0.20.0
 huggingface_hub>=0.20.0
+# Note: 'spaces' package is NOT included - we use a local mock for ZeroGPU compatibility
 
 # ML fundamentals (most Spaces need these)
 torch>=2.0.0
