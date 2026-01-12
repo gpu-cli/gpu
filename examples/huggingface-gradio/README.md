@@ -63,6 +63,49 @@ gpu run python setup.py owner/private-space
 gpu run python run.py owner/private-space
 ```
 
+## Access Options
+
+By default, the template uses Gradio's `share=True` to create a public `gradio.live` URL. This provides the best performance and is the recommended approach.
+
+### Option 1: Public URL via gradio.live (Default, Recommended)
+
+```bash
+gpu run python run.py Lightricks/ltx-video-distilled
+```
+
+- ✅ **Best performance** - optimized tunnel infrastructure
+- ✅ No port forwarding needed
+- ✅ Shareable public URL
+- ⚠️ 72-hour URL expiration
+
+### Option 2: Direct localhost (Slower)
+
+If you need local-only access or can't use public URLs, you can use GPU CLI's port forwarding instead:
+
+1. Edit `run.py` and comment out the `patch_entry_point_for_share` call in `launch_app()`:
+   ```python
+   def launch_app(space_path: Path, entry_point: Path) -> None:
+       create_spaces_mock(space_path)
+       # patched_entry = patch_entry_point_for_share(entry_point)  # Disable share
+       patched_entry = entry_point  # Use original entry point
+   ```
+
+2. Run with port publishing:
+   ```bash
+   gpu run --publish 7860:7860 python run.py Lightricks/ltx-video-distilled
+   ```
+
+3. Check the terminal for the remapped port:
+   ```
+   [gpu]> Remote 7860 -> http://localhost:61234 (remapped)
+   ```
+
+4. Open the localhost URL shown (e.g., `http://localhost:61234`)
+
+- ✅ Local-only access (no public URL)
+- ⚠️ **Slower performance** than gradio.live
+- ⚠️ Need to track port remapping
+
 ## Configuration
 
 Default settings in `gpu.jsonc`:
