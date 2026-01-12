@@ -16,3 +16,6 @@ venv/
 .idea/
 .vscode/
 *.swp
+
+# Documentation
+examples/CLI_TEMPLATES_GUIDE.md

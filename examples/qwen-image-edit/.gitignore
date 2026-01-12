@@ -1,0 +1,23 @@
+# ComfyUI installation (downloaded by setup script)
+ComfyUI/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# GPU CLI state
+.gpu/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
