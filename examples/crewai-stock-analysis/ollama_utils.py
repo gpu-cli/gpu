@@ -23,7 +23,7 @@ def get_vram_gb() -> int:
         mib = int(result.stdout.strip().split("\n")[0])
         gb = mib // 1024
         return gb
-    except Exception as e:
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError, IndexError) as e:
         log(f"   ⚠️  Could not detect VRAM: {e}")
         return 24  # Default assumption
 

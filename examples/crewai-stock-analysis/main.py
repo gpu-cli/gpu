@@ -10,6 +10,10 @@ Usage:
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from crew import StockAnalysisCrew
 
 # Force unbuffered output for real-time feedback
 os.environ["PYTHONUNBUFFERED"] = "1"
@@ -20,7 +24,7 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def run_analysis(ticker: str, crew) -> str:
+def run_analysis(ticker: str, crew: "StockAnalysisCrew") -> str:
     """Run stock analysis for a single ticker."""
     log(f"\n{'=' * 60}")
     log(f"Analyzing {ticker}...")
@@ -39,7 +43,7 @@ def run_analysis(ticker: str, crew) -> str:
     return str(result)
 
 
-def interactive_mode(crew):
+def interactive_mode(crew: "StockAnalysisCrew") -> None:
     """Interactive query loop."""
     log("\n" + "=" * 60)
     log("CrewAI Stock Analysis - Interactive Mode")
@@ -70,7 +74,7 @@ def interactive_mode(crew):
             break
 
 
-def main():
+def main() -> None:
     # Load model config from setup
     model_file = Path(".ollama_model")
     if not model_file.exists():

@@ -26,7 +26,7 @@ class WebSearchTool(BaseTool):
                 output.append(f"URL: {r.get('href', 'N/A')}")
                 output.append(f"{r.get('body', 'No description')}\n")
             return "\n".join(output)
-        except Exception as e:
+        except (requests.RequestException, ConnectionError, TimeoutError) as e:
             return f"Search error: {str(e)}"
 
 
@@ -59,5 +59,5 @@ class WebScrapeTool(BaseTool):
                 text = text[:4000] + "\n...[truncated]"
 
             return text
-        except Exception as e:
+        except requests.RequestException as e:
             return f"Scrape error: {str(e)}"
