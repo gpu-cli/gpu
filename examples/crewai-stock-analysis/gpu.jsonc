@@ -37,8 +37,7 @@
           "timeout_sec": 180
         },
         {
-          "run": "pip install -q 'crewai[tools]>=1.0.0' 'litellm[proxy]>=1.0.0' 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0'",
-          "only_once": true,
+          "run": "pip install 'crewai[tools]' 'litellm' 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0'",
           "timeout_sec": 600
         }
       ]
