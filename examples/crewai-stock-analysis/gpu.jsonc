@@ -1,0 +1,46 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  "project_id": "crewai-stock-analysis",
+  "provider": "runpod",
+
+  // Template metadata
+  "template": {
+    "name": "CrewAI Stock Analysis",
+    "description": "Multi-agent AI stock analysis powered by local LLMs via Ollama",
+    "author": "gpu-cli"
+  },
+
+  // GPU configuration - 24GB+ for running 14B models
+  "gpu_types": [
+    { "type": "NVIDIA A40" },
+    { "type": "NVIDIA RTX A6000" },
+    { "type": "NVIDIA GeForce RTX 4090" }
+  ],
+  "min_vram": 24,
+  "max_price": 1.20,
+
+  // Storage and lifecycle
+  "workspace_size_gb": 30,
+  "cooldown_minutes": 15,
+  "encryption": false,
+
+  // Sync reports and model config back to local
+  "outputs": ["reports/", ".ollama_model"],
+
+  // Environment: install dependencies
+  "environment": {
+    "shell": {
+      "steps": [
+        {
+          "run": "curl -fsSL https://ollama.com/install.sh | sh",
+          "only_once": true,
+          "timeout_sec": 180
+        },
+        {
+          "run": "pip install 'crewai[tools]' 'litellm' 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0'",
+          "timeout_sec": 600
+        }
+      ]
+    }
+  }
+}
