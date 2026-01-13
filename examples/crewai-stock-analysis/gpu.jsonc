@@ -27,7 +27,7 @@
   // Sync reports and model config back to local
   "outputs": ["reports/", ".ollama_model"],
 
-  // Environment: install Ollama on first run
+  // Environment: install dependencies
   "environment": {
     "shell": {
       "steps": [
@@ -35,6 +35,11 @@
           "run": "curl -fsSL https://ollama.com/install.sh | sh",
           "only_once": true,
           "timeout_sec": 180
+        },
+        {
+          "run": "pip install -q 'crewai[tools]>=1.0.0' 'litellm[proxy]>=1.0.0' 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0'",
+          "only_once": true,
+          "timeout_sec": 600
         }
       ]
     }
