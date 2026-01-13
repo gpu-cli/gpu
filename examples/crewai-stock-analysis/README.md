@@ -92,7 +92,7 @@ The report includes:
 
 | File | Description |
 |------|-------------|
-| `gpu.toml` | GPU CLI configuration (GPU types, outputs, environment) |
+| `gpu.jsonc` | GPU CLI configuration (GPU types, outputs, environment) |
 | `pyproject.toml` | Python dependencies |
 | `setup.py` | One-time setup - initializes Ollama and downloads model |
 | `main.py` | Interactive query interface for stock analysis |
