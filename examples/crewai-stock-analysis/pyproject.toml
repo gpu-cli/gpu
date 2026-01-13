@@ -1,0 +1,16 @@
+[project]
+name = "crewai-stock-analysis"
+version = "0.1.0"
+description = "GPU CLI example: Multi-agent stock analysis with local LLMs"
+requires-python = ">=3.10"
+dependencies = [
+    "crewai>=0.80.0",
+    "crewai-tools>=0.14.0",
+    "duckduckgo-search>=6.0.0",
+    "beautifulsoup4>=4.12.0",
+    "requests>=2.31.0",
+    "pyyaml>=6.0.0",
+]
+
+[tool.setuptools]
+py-modules = []

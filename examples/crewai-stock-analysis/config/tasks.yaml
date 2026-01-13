@@ -1,0 +1,43 @@
+research_task:
+  description: >
+    Research {ticker} comprehensively. Find:
+    1. Recent news and developments (last 30 days)
+    2. Current stock price and 52-week range
+    3. Key products/services and market position
+    4. Recent earnings highlights
+    5. Major risks and opportunities
+  expected_output: >
+    A detailed research report with sections for each area above,
+    citing specific sources and data points.
+  agent: research_analyst
+
+analysis_task:
+  description: >
+    Based on the research, analyze {ticker}'s financial health:
+    1. Valuation metrics (P/E, P/S, PEG ratio)
+    2. Growth trends (revenue, earnings, margins)
+    3. Comparison to industry peers
+    4. Balance sheet strength
+    5. Cash flow analysis
+  expected_output: >
+    A financial analysis report with specific metrics, trends,
+    and comparison to competitors.
+  agent: financial_analyst
+  context:
+    - research_task
+
+recommendation_task:
+  description: >
+    Based on all research and analysis, provide a final investment recommendation:
+    1. Clear BUY / HOLD / SELL rating
+    2. Target price with timeframe
+    3. Key investment thesis (3-5 bullet points)
+    4. Main risks to monitor
+    5. Suggested position sizing for different risk profiles
+  expected_output: >
+    A professional investment recommendation report suitable for
+    presenting to clients, with clear rationale and actionable advice.
+  agent: investment_advisor
+  context:
+    - research_task
+    - analysis_task
