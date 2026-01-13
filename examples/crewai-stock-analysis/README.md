@@ -11,29 +11,68 @@ Multi-agent AI stock analysis powered by local LLMs on remote GPUs.
 
 ## Quick Start
 
+### Step 1: Setup (one-time)
+
+Initialize the Ollama server and download the model:
+
 ```bash
-# Analyze NVIDIA stock
+gpu run python setup.py
+```
+
+This provisions a GPU pod, installs Ollama, and downloads the appropriate model based on available VRAM. Takes 5-10 minutes on first run.
+
+### Step 2: Run Queries
+
+**Interactive mode** - analyze multiple stocks in one session:
+
+```bash
+gpu run python main.py
+```
+
+You'll see an interactive prompt:
+```
+============================================================
+CrewAI Stock Analysis - Interactive Mode
+============================================================
+Enter stock tickers to analyze (e.g., NVDA, AAPL, TSLA)
+Type 'quit' or 'exit' to stop
+============================================================
+
+Ticker> NVDA
+... analysis runs ...
+
+Ticker> AAPL
+... analysis runs ...
+
+Ticker> quit
+```
+
+**Single query mode** - analyze one stock and exit:
+
+```bash
 gpu run python main.py NVDA
-
-# Analyze Apple stock
-gpu run python main.py AAPL
-
-# Analyze Tesla stock
-gpu run python main.py TSLA
 ```
 
 ## What Happens
+
+### During Setup (`setup.py`)
 
 1. GPU CLI provisions a pod with an NVIDIA A40/A6000 (48GB) or RTX 4090 (24GB)
 2. Ollama installs automatically during provisioning
 3. The appropriate model downloads based on available VRAM:
    - 48GB+ VRAM: Qwen 2.5 32B (excellent reasoning)
    - 24GB VRAM: Qwen 2.5 14B (good balance of speed/quality)
-4. Three AI agents collaborate to analyze the stock:
+4. Configuration is saved for subsequent runs
+
+### During Analysis (`main.py`)
+
+1. Connects to the running pod with Ollama already configured
+2. Three AI agents collaborate to analyze the stock:
    - **Research Analyst**: Gathers news, market data, and company info
    - **Financial Analyst**: Analyzes valuation, growth trends, and financials
    - **Investment Advisor**: Synthesizes everything into a recommendation
-5. The final report syncs back to your local `reports/` folder
+3. The final report syncs back to your local `reports/` folder
+4. In interactive mode, you can analyze multiple stocks without restarting
 
 ## Output
 
@@ -53,14 +92,15 @@ The report includes:
 
 | File | Description |
 |------|-------------|
-| `gpu.jsonc` | GPU CLI configuration (GPU types, outputs, environment) |
+| `gpu.toml` | GPU CLI configuration (GPU types, outputs, environment) |
 | `pyproject.toml` | Python dependencies |
-| `main.py` | Entry point - handles Ollama setup and runs the crew |
+| `setup.py` | One-time setup - initializes Ollama and downloads model |
+| `main.py` | Interactive query interface for stock analysis |
 | `crew.py` | CrewAI crew definition with agents and tasks |
 | `ollama_utils.py` | Ollama server management utilities |
 | `config/agents.yaml` | Agent role definitions |
 | `config/tasks.yaml` | Task descriptions and workflow |
-| `tools/search.py` | DuckDuckGo search and web scraping tools |
+| `tools/search.py` | Web search and scraping tools |
 
 ## Customization
 
@@ -101,11 +141,18 @@ First run takes longer due to model download (~10-20GB).
 
 ## Troubleshooting
 
+### "Run 'gpu run python setup.py' first to initialize"
+
+You need to run setup before running queries:
+```bash
+gpu run python setup.py
+```
+
 ### "Ollama server failed to start"
 
-The Ollama installation may have failed. Try running manually:
+The Ollama installation may have failed. Try running setup again:
 ```bash
-gpu run -- curl -fsSL https://ollama.com/install.sh | sh
+gpu run python setup.py
 ```
 
 ### "Model download failed"

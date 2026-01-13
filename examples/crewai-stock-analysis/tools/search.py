@@ -1,6 +1,6 @@
 """Web search and scraping tools for stock research"""
 from crewai.tools import BaseTool
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 import requests
 from bs4 import BeautifulSoup
 

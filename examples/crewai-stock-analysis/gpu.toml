@@ -3,7 +3,7 @@
 
 project_id = "crewai-stock-analysis"
 provider = "runpod"
-outputs = ["reports/"]
+outputs = ["reports/", ".ollama_model"]
 encryption = false
 min_vram = 24
 max_price = 1.20  # Enable auto-fallback to any GPU up to $1.20/hr

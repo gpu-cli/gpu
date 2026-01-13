@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""CrewAI Stock Analysis - GPU CLI Example
+"""CrewAI Stock Analysis - Interactive Mode
 
 Multi-agent AI stock analysis powered by local LLMs on remote GPUs.
 
 Usage:
-    gpu run python main.py NVDA
-    gpu run python main.py AAPL
-    gpu run python main.py TSLA
+    gpu run python main.py           # Interactive mode
+    gpu run python main.py NVDA      # Single query mode
 """
 import os
 import sys
@@ -21,47 +20,13 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def main():
-    # Get ticker from command line or use default
-    ticker = sys.argv[1].upper() if len(sys.argv) > 1 else "NVDA"
-
-    log("=" * 60)
-    log("🚀 CrewAI Stock Analysis")
-    log("=" * 60)
-    log(f"📊 Analyzing: {ticker}")
-
-    # Import here to show progress before heavy imports
-    from ollama_utils import get_vram_gb, select_model, ensure_ollama_running
-
-    # Detect GPU and select model
-    log("\n🔍 Detecting GPU...")
-    vram = get_vram_gb()
-    model = select_model(vram)
-    log(f"🖥️  VRAM: {vram}GB detected")
-    log(f"🤖 Model: {model}")
-
-    # Setup Ollama
-    log("\n⏳ Setting up Ollama...")
-    ollama_model = ensure_ollama_running(model)
-    log("✅ Ollama ready!")
-
-    # Set environment variable for crew.py to use
-    os.environ["OLLAMA_MODEL"] = ollama_model
-
-    # Import crew after Ollama is ready
-    log("\n📦 Loading CrewAI agents...")
-    from crew import StockAnalysisCrew
-
-    # Run analysis with phase indicators
-    log("\n" + "=" * 60)
-    log(f"🔬 Starting analysis of {ticker}")
-    log("   This may take 5-15 minutes depending on model size.")
+def run_analysis(ticker: str, crew) -> str:
+    """Run stock analysis for a single ticker."""
+    log(f"\n{'=' * 60}")
+    log(f"Analyzing {ticker}...")
+    log("This may take 5-15 minutes depending on model size.")
     log("=" * 60)
 
-    log("\n🔍 Phase 1/3: Research Analyst gathering data...")
-    log("   → Searching for news, financials, market data")
-
-    crew = StockAnalysisCrew()
     result = crew.crew().kickoff(inputs={"ticker": ticker})
 
     # Save report
@@ -70,10 +35,63 @@ def main():
     report_path = output_dir / f"{ticker}_analysis.md"
     report_path.write_text(str(result))
 
+    log(f"\nReport saved: {report_path}")
+    return str(result)
+
+
+def interactive_mode(crew):
+    """Interactive query loop."""
     log("\n" + "=" * 60)
-    log("✅ Analysis complete!")
-    log(f"📁 Report saved to: {report_path}")
+    log("CrewAI Stock Analysis - Interactive Mode")
     log("=" * 60)
+    log("Enter stock tickers to analyze (e.g., NVDA, AAPL, TSLA)")
+    log("Type 'quit' or 'exit' to stop")
+    log("=" * 60)
+
+    while True:
+        try:
+            ticker = input("\nTicker> ").strip().upper()
+
+            if not ticker:
+                continue
+            if ticker in ("QUIT", "EXIT", "Q"):
+                log("Goodbye!")
+                break
+            if not ticker.isalpha() or len(ticker) > 5:
+                log("Invalid ticker. Use 1-5 letters (e.g., NVDA)")
+                continue
+
+            run_analysis(ticker, crew)
+
+        except KeyboardInterrupt:
+            log("\nGoodbye!")
+            break
+        except EOFError:
+            break
+
+
+def main():
+    # Load model config from setup
+    model_file = Path(".ollama_model")
+    if not model_file.exists():
+        log("Error: Run 'gpu run python setup.py' first to initialize")
+        sys.exit(1)
+
+    ollama_model = model_file.read_text().strip()
+    os.environ["OLLAMA_MODEL"] = ollama_model
+
+    log(f"Using model: {ollama_model}")
+
+    # Import crew after model is configured
+    from crew import StockAnalysisCrew
+    crew = StockAnalysisCrew()
+
+    # Check for command line ticker
+    if len(sys.argv) > 1:
+        ticker = sys.argv[1].upper()
+        run_analysis(ticker, crew)
+    else:
+        interactive_mode(crew)
 
 
 if __name__ == "__main__":
