@@ -4,7 +4,10 @@
   // InvokeAI with BiRefNet background removal node pre-installed
   "project_id": "background-removal",
   "provider": "runpod",
-  "gpu_type": "NVIDIA RTX 6000 Ada Generation",
+  "gpu_types": [
+    { "type": "NVIDIA RTX 6000 Ada Generation" }
+  ],
+  "encryption": false,
   "min_vram": 24,
   "workspace_size_gb": 60,
   "outputs": ["invokeai/outputs/"],

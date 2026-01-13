@@ -8,6 +8,10 @@ __pycache__/
 venv/
 ENV/
 env/
+*.egg-info/
+
+# GPU CLI (never sync these)
+.gpu/
 
 # Reports (synced by GPU CLI, don't commit)
 reports/*.md

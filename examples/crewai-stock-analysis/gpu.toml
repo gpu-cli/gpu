@@ -1,0 +1,25 @@
+# GPU CLI Configuration for CrewAI Stock Analysis
+# Runs multi-agent AI analysis using local LLMs via Ollama
+
+[tool.gpu]
+project_id = "crewai-stock-analysis"
+provider = "runpod"
+outputs = ["reports/"]
+encryption = false
+min_vram = 24
+cooldown_minutes = 15
+workspace_size_gb = 30  # Space for 14B model (~9GB) + dependencies
+
+[[tool.gpu.gpu_types]]
+type = "NVIDIA A40"
+
+[[tool.gpu.gpu_types]]
+type = "NVIDIA RTX A6000"
+
+[[tool.gpu.gpu_types]]
+type = "NVIDIA GeForce RTX 4090"
+
+[tool.gpu.environment.shell]
+steps = [
+    { run = "curl -fsSL https://ollama.com/install.sh | sh", only_once = true, timeout_sec = 180 }
+]
