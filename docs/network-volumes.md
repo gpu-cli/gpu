@@ -50,9 +50,104 @@ Choose a datacenter with the GPUs you need:
 | LLM (70B) | Qwen 72B, Llama 70B | 150GB |
 | Multi-workflow | Multiple large models | 500GB |
 
+## Managing Volumes via CLI
+
+GPU CLI provides commands to manage network volumes directly, without using the RunPod console.
+
+### List volumes
+
+```bash
+# List all volumes
+gpu volume list
+
+# Detailed view with usage and attached pods
+gpu volume list --detailed
+
+# JSON output for scripting
+gpu volume list --json
+```
+
+### Create a volume
+
+```bash
+# Interactive (prompts for datacenter)
+gpu volume create --name my-models --size 200
+
+# Specify datacenter
+gpu volume create --name my-models --size 200 --datacenter US-OR-1
+
+# Create and set as global
+gpu volume create --name shared-models --size 500 --set-global
+```
+
+### Set global volume
+
+The global volume is shared across all projects (unless overridden by `volume_mode`).
+
+```bash
+gpu volume set-global vol_abc123xyz
+```
+
+### Check volume usage
+
+```bash
+# Current global volume
+gpu volume status
+
+# Specific volume
+gpu volume status --volume vol_abc123xyz
+```
+
+### Extend volume
+
+```bash
+gpu volume extend vol_abc123xyz --size 300
+```
+
+### Delete volume
+
+```bash
+gpu volume delete vol_abc123xyz
+```
+
+## Volume Modes
+
+Configure how your project uses network volumes in `gpu.jsonc`:
+
+### Global (default)
+
+Uses the shared global volume set via `gpu volume set-global`. All projects share this volume unless overridden.
+
+```jsonc
+{
+  "volume_mode": "global"
+}
+```
+
+### Dedicated
+
+Project-specific volume, isolated from other projects.
+
+```jsonc
+{
+  "volume_mode": "dedicated",
+  "dedicated_volume_id": "vol_project_xyz"  // optional, auto-created if omitted
+}
+```
+
+### None
+
+No network volume (ephemeral storage only). Good for quick experiments.
+
+```jsonc
+{
+  "volume_mode": "none"
+}
+```
+
 ## Configuring GPU CLI
 
-Add the volume ID to your `gpu.jsonc`:
+Add volume configuration to your `gpu.jsonc`:
 
 ```jsonc
 {
@@ -60,12 +155,28 @@ Add the volume ID to your `gpu.jsonc`:
   "project_id": "my-project",
   "provider": "runpod",
 
-  // Add your Network Volume ID here
+  // Option 1: Use global volume (default)
+  "volume_mode": "global",
+
+  // Option 2: Use specific volume ID
   "network_volume_id": "YOUR_VOLUME_ID",
+
+  // Option 3: Project-dedicated volume
+  // "volume_mode": "dedicated",
 
   "gpu_type": "NVIDIA GeForce RTX 4090"
 }
 ```
+
+## Volume Reconciliation
+
+GPU CLI automatically keeps local configuration in sync with the cloud provider:
+
+- **Deleted volumes**: If you delete a volume via the RunPod console, GPU CLI detects this and clears stale references from your config on next use.
+- **Metadata sync**: Volume name and datacenter are cached locally and updated if they change on the provider.
+- **When it runs**: On `gpu volume list`, `gpu run`, daemon startup, and periodically (every 15 minutes).
+
+This means you can safely manage volumes via the RunPod web console — GPU CLI will adapt automatically.
 
 ## Volume Mount Location
 
