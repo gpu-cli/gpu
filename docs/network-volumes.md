@@ -218,17 +218,44 @@ Don't mix unrelated models. Create separate volumes for:
 
 ### 2. Use Downloads in gpu.jsonc
 
-Pre-download models to the volume:
+Pre-download models and clone tool repositories to the volume:
 
 ```jsonc
 {
   "network_volume_id": "abc123",
   "download": [
+    // HuggingFace models
     { "strategy": "hf", "source": "black-forest-labs/FLUX.1-dev" },
-    { "strategy": "civitai", "source": "4384", "target": "/runpod-volume/models/loras/" }
+
+    // Civitai models (supports model ID, version ID, or AIR URN)
+    { "strategy": "civitai", "source": "4384" },
+    { "strategy": "civitai", "source": "urn:air:sdxl:lora:civitai:328553@368189" },
+
+    // Git repositories (auto-updates when clean)
+    { "strategy": "git", "source": "https://github.com/comfyanonymous/ComfyUI", "target": "ComfyUI" },
+
+    // HTTP direct downloads
+    { "strategy": "http", "source": "https://example.com/model.bin", "target": "models/model.bin" }
   ]
 }
 ```
+
+**Download strategies:**
+
+| Strategy | Use Case | Example Source |
+|----------|----------|----------------|
+| `hf` | HuggingFace models | `"black-forest-labs/FLUX.1-dev"` |
+| `civitai` | Civitai models | `"4384"` or AIR URN |
+| `git` | Tool repositories | `"https://github.com/comfyanonymous/ComfyUI"` |
+| `git-lfs` | Repos with large files | HuggingFace repos with LFS |
+| `http` | Direct URL downloads | Any HTTP/HTTPS URL |
+| `script` | Custom download logic | Shell script path |
+
+**Git strategy features:**
+- Shallow clone by default (`--depth 1`)
+- Auto-pull on clean working tree
+- Preserves user modifications (warns if dirty)
+- Supports `branch`, `tag`, or `commit` pinning
 
 ### 3. Save Checkpoints to Volume
 
