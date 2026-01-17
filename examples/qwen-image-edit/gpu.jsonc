@@ -5,7 +5,10 @@
   "project_id": "qwen-image-edit",
   "provider": "runpod",
   "gpu_types": [
-    { "type": "NVIDIA GeForce RTX 4090" }
+    { "type": "NVIDIA GeForce RTX 4090" },
+    { "type": "NVIDIA L40S" },
+    { "type": "NVIDIA A40" },
+    { "type": "NVIDIA GeForce RTX 3090" }
   ],
   "encryption": false,
   "min_vram": 24,
