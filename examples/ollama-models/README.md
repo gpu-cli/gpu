@@ -137,18 +137,18 @@ export ANTHROPIC_AUTH_TOKEN=ollama
 export ANTHROPIC_BASE_URL=http://localhost:11434
 
 # Run Claude Code with your model
-claude --model qwen2.5-coder:14b
+claude --model glm-4.7-flash
 ```
 
 ### Recommended Models for Claude Code
 
 | Model | Size | Context | VRAM | Best For |
 |-------|------|---------|------|----------|
-| `qwen2.5-coder:14b` | 9GB | 32K | 16GB | Great balance of speed/quality (default) |
-| `qwen2.5-coder:32b` | 20GB | 32K | 24GB | GPT-4o competitive, best quality |
+| `glm-4.7-flash` | 19GB | 198K | 24GB | Excellent quality, huge context (default) |
+| `qwen2.5-coder:14b` | 9GB | 32K | 16GB | Great balance of speed/quality |
 | `qwen2.5-coder:7b` | 4.7GB | 32K | 8GB | Fast, good for simple tasks |
 
-**Note:** Claude Code benefits from models with 32K+ context. The 14B model is the default - fast to download and great quality.
+**Note:** Claude Code benefits from models with large context windows. The `glm-4.7-flash` model offers 198K context and excellent quality.
 
 ## Pull Additional Models
 

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // vLLM Models Example
+  // Run Open Source LLMs with vLLM's high-performance inference engine
+  //
+  // Endpoints exposed:
+  // - Port 8000: vLLM API (OpenAI-compatible)
+  // - Port 8080: Lightweight Web UI for chatting with models
+  //
+  // To configure which model to run, edit models.json
+
+  "project_id": "vllm-models",
+  "provider": "runpod",
+
+  // GPU selection - LLMs benefit from high VRAM
+  // vLLM requires more VRAM than Ollama due to KV cache optimization
+  "gpu_types": [
+    { "type": "RTX 4090" },           // 24GB - great for 7B-14B models
+    { "type": "A40" },                 // 48GB - good for 30B models
+    { "type": "L40S" },                // 48GB - newer, good availability
+    { "type": "A100 PCIe 80GB" }       // 80GB - for 70B+ models
+  ],
+  "min_vram": 24,
+
+  // Dual port forwarding - both ports accessible on localhost after gpu run
+  "ports": [8000, 8080],
+
+  // Keep-alive time after last activity (pod stops after this idle period)
+  // vLLM loads models at startup, so keep-alive should account for this
+  "keep_alive_minutes": 20,
+
+  // Startup launches vLLM server + Web UI
+  "startup": "bash ./startup.sh",
+
+  // Readiness hook - wait for vLLM API to be ready before marking pod as ready
+  // vLLM model loading is slow (30-120s depending on model size)
+  "hooks": {
+    "readiness": {
+      "type": "command",
+      "name": "vllm-ready",
+      "run": ["curl", "-sf", "http://localhost:8000/v1/models"],
+      "retry_count": 60,
+      "retry_delay_secs": 3,
+      "timeout_secs": 10
+    }
+  },
+
+  // Environment - use official vLLM Docker image
+  "environment": {
+    // Official vLLM OpenAI-compatible server image
+    // Includes vLLM with all dependencies pre-installed
+    "base_image": "vllm/vllm-openai:latest",
+
+    "system": {
+      "apt": [
+        { "name": "curl" },
+        { "name": "jq" }
+      ]
+    }
+  },
+
+  // Optional: HuggingFace token for gated models (Meta Llama, etc.)
+  // Set via: gpu secret set HF_TOKEN <your-token>
+  "inputs": [
+    {
+      "name": "hf_token",
+      "secret": true,
+      "optional": true,
+      "description": "HuggingFace token for gated models (Llama, etc.)"
+    }
+  ]
+}

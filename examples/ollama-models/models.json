@@ -1,7 +1,7 @@
 {
   "models": [
-    "qwen2.5-coder:14b",
+    "glm-4.7-flash",
     "llama3.2:3b"
   ],
-  "default": "qwen2.5-coder:14b"
+  "default": "glm-4.7-flash"
 }
