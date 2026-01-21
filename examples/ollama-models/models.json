@@ -1,12 +1,7 @@
 {
-  "// CONFIGURATION": "Edit the models array below to specify which models to pre-pull",
-  "// Available models": "https://ollama.com/library",
-  "// Model format": "name:tag (e.g., llama3.2:7b, mistral:latest)",
-
   "models": [
     "qwen2.5-coder:14b",
     "llama3.2:3b"
   ],
-
   "default": "qwen2.5-coder:14b"
 }

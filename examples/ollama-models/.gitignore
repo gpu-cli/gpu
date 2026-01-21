@@ -1,33 +1,9 @@
-# GPU CLI internal state
-pods/
-.gpu/
-build/
-outputs/
-results/
-
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-venv/
-
-# Environment files (may contain secrets)
-.env
-.env.*
+# Generated files (template-specific)
+ui/models.json
 
 # Logs
 *.log
 
-# IDE
-.vscode/
-.idea/
-*.swp
+# Additional editor files
 *.swo
-
-# OS
-.DS_Store
 Thumbs.db
-
-# Generated files
-ui/models.json

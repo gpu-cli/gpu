@@ -23,6 +23,7 @@ examples/CLI_TEMPLATES_GUIDE.md
 # GPU CLI internal state
 **/pods/
 **/.gpu/
+**/.gpu-local/
 **/build/
 **/outputs/
 **/results/
