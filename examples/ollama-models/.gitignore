@@ -1,0 +1,14 @@
+# GPU CLI internal state
+pods/
+.gpu/
+build/
+outputs/
+results/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS
+.DS_Store
