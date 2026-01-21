@@ -95,11 +95,23 @@ async function loadModels() {
 
     const data = await response.json();
     const availableModels = data.models || [];
+    const availableNames = availableModels.map(m => m.name);
 
     // Clear and populate select
     modelSelect.innerHTML = '';
 
-    if (availableModels.length === 0) {
+    // Find configured models that aren't pulled yet
+    const notPulledModels = configuredModels.filter(configName =>
+      !availableNames.some(available => available === configName || available.startsWith(configName + ':'))
+    );
+
+    // If no models available and we have configured models not pulled, show them
+    if (availableModels.length === 0 && notPulledModels.length > 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No models pulled yet - select one to download';
+      modelSelect.appendChild(option);
+    } else if (availableModels.length === 0) {
       modelSelect.innerHTML = '<option value="">No models available - pull one first</option>';
       sendBtn.disabled = true;
       return;
@@ -113,6 +125,22 @@ async function loadModels() {
       modelSelect.appendChild(option);
     });
 
+    // Add separator and not-pulled configured models
+    if (notPulledModels.length > 0 && availableModels.length > 0) {
+      const separator = document.createElement('option');
+      separator.disabled = true;
+      separator.textContent = '── Not yet downloaded ──';
+      modelSelect.appendChild(separator);
+    }
+
+    notPulledModels.forEach(modelName => {
+      const option = document.createElement('option');
+      option.value = `pull:${modelName}`;
+      option.textContent = `⬇ ${modelName} (click to download)`;
+      option.className = 'not-pulled';
+      modelSelect.appendChild(option);
+    });
+
     // Select default model if available
     if (defaultModel && availableModels.some(m => m.name === defaultModel || m.name.startsWith(defaultModel))) {
       const match = availableModels.find(m => m.name === defaultModel || m.name.startsWith(defaultModel));
@@ -120,7 +148,7 @@ async function loadModels() {
     }
 
     currentModel = modelSelect.value;
-    sendBtn.disabled = !currentModel;
+    sendBtn.disabled = !currentModel || currentModel.startsWith('pull:');
 
   } catch (e) {
     console.error('Error loading models:', e);
@@ -139,8 +167,20 @@ function formatSize(bytes) {
 // Setup event listeners
 function setupEventListeners() {
   // Model selection
-  modelSelect.addEventListener('change', (e) => {
-    currentModel = e.target.value;
+  modelSelect.addEventListener('change', async (e) => {
+    const value = e.target.value;
+
+    // If user selected a not-pulled model, trigger download
+    if (value.startsWith('pull:')) {
+      const modelName = value.substring(5); // Remove 'pull:' prefix
+      modelNameInput.value = modelName;
+      showPullModal();
+      // Reset selection to previous or first available
+      modelSelect.value = currentModel || '';
+      return;
+    }
+
+    currentModel = value;
     sendBtn.disabled = !currentModel;
   });
 

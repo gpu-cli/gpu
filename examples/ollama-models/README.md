@@ -132,25 +132,23 @@ This template can serve as a backend for [Claude Code](https://docs.anthropic.co
 2. Configure Claude Code to use the Ollama endpoint:
 
 ```bash
-# Set environment variables
+# Set environment variables (add to ~/.zshrc or ~/.bashrc)
+export ANTHROPIC_AUTH_TOKEN=ollama
 export ANTHROPIC_BASE_URL=http://localhost:11434
-export ANTHROPIC_API_KEY=ollama  # Required but ignored
 
-# Run Claude Code
-claude
+# Run Claude Code with your model
+claude --model qwen2.5-coder:14b
 ```
-
-Or create a Claude Code settings file with custom provider configuration.
 
 ### Recommended Models for Claude Code
 
-| Model | Size | Context | Best For |
-|-------|------|---------|----------|
-| `qwen2.5-coder:7b` | 4GB | 32K | Code generation, refactoring |
-| `qwen2.5-coder:14b` | 9GB | 32K | Complex code tasks |
-| `deepseek-coder-v2:16b` | 9GB | 128K | Long context, large codebases |
+| Model | Size | Context | VRAM | Best For |
+|-------|------|---------|------|----------|
+| `qwen2.5-coder:14b` | 9GB | 32K | 16GB | Great balance of speed/quality (default) |
+| `qwen2.5-coder:32b` | 20GB | 32K | 24GB | GPT-4o competitive, best quality |
+| `qwen2.5-coder:7b` | 4.7GB | 32K | 8GB | Fast, good for simple tasks |
 
-**Note:** Claude Code benefits from models with 32K+ context. Ensure sufficient VRAM for your chosen model.
+**Note:** Claude Code benefits from models with 32K+ context. The 14B model is the default - fast to download and great quality.
 
 ## Pull Additional Models
 
