@@ -7,6 +7,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Store models on the workspace volume (has more space than container disk)
+export OLLAMA_MODELS="$SCRIPT_DIR/.ollama/models"
+mkdir -p "$OLLAMA_MODELS"
+
 # Graceful shutdown handler
 cleanup() {
   echo ""
@@ -32,24 +36,30 @@ echo "=== Ollama Models Template ==="
 echo "Working directory: $SCRIPT_DIR"
 echo ""
 
-# Start Ollama server in background
-echo "Starting Ollama server..."
-ollama serve &
-OLLAMA_PID=$!
+# Check if Ollama is already running (from previous job)
+if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+  echo "Ollama is already running (reusing existing server)"
+  OLLAMA_PID=""
+else
+  # Start Ollama server in background
+  echo "Starting Ollama server..."
+  ollama serve &
+  OLLAMA_PID=$!
 
-# Wait for Ollama to be ready
-echo "Waiting for Ollama API..."
-for i in {1..60}; do
-  if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
-    echo "Ollama is ready!"
-    break
-  fi
-  if [ $i -eq 60 ]; then
-    echo "Error: Ollama failed to start within 60 seconds"
-    exit 1
-  fi
-  sleep 1
-done
+  # Wait for Ollama to be ready
+  echo "Waiting for Ollama API..."
+  for i in {1..60}; do
+    if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+      echo "Ollama is ready!"
+      break
+    fi
+    if [ $i -eq 60 ]; then
+      echo "Error: Ollama failed to start within 60 seconds"
+      exit 1
+    fi
+    sleep 1
+  done
+fi
 
 # Pre-pull configured models from models.json
 if [ -f "./models.json" ]; then
@@ -80,11 +90,19 @@ fi
 
 # Start Web UI server (Python's built-in HTTP server)
 echo ""
-echo "Starting Web UI on port 8080..."
 # Copy models.json to ui/ so the web server can serve it
 cp -f ./models.json ./ui/models.json 2>/dev/null || true
-cd ui && python -m http.server 8080 --bind 0.0.0.0 &
-WEB_PID=$!
+
+# Check if Web UI is already running (from previous job)
+if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+  echo "Web UI is already running on port 8080 (reusing existing server)"
+  WEB_PID=""
+else
+  echo "Starting Web UI on port 8080..."
+  cd ui && python -m http.server 8080 --bind 0.0.0.0 &
+  WEB_PID=$!
+  cd "$SCRIPT_DIR"
+fi
 
 echo ""
 echo "========================================"
@@ -101,7 +119,7 @@ echo ""
 echo "    # Chat (OpenAI-compatible)"
 echo "    curl http://localhost:11434/v1/chat/completions \\"
 echo "      -H 'Content-Type: application/json' \\"
-echo "      -d '{\"model\":\"llama3.2:3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello!\"}]}'"
+echo "      -d '{\"model\":\"glm-4.7-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello!\"}]}'"
 echo ""
 echo "  Pull more models:"
 echo "    ollama pull codellama:7b"

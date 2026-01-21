@@ -233,5 +233,5 @@ The following features are being developed by other engineers:
 - **Cooldown Hook**: Automatic cooldown extension during model loading
 
 Current workarounds:
-- Use longer `cooldown_minutes` for large models
+- Use longer `keep_alive_minutes` for large models
 - Pre-pull models in `models.json` to reduce first-use latency

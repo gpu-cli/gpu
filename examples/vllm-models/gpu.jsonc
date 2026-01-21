@@ -22,6 +22,9 @@
   ],
   "min_vram": 24,
 
+  // Disk space for models (GLM-4.7-Flash ~18GB + system overhead)
+  "workspace_size_gb": 50,
+
   // Dual port forwarding - both ports accessible on localhost after gpu run
   "ports": [8000, 8080],
 

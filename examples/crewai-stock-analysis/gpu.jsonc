@@ -21,7 +21,7 @@
 
   // Storage and lifecycle
   "workspace_size_gb": 30,
-  "cooldown_minutes": 15,
+  "keep_alive_minutes": 15,
   "encryption": false,
 
   // Sync reports and model config back to local

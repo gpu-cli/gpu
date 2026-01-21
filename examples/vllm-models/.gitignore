@@ -1,6 +1,9 @@
 # Generated files (template-specific)
 ui/models.json
 
+# HuggingFace model cache (stored on volume, don't sync back)
+.hf_cache/
+
 # GPU CLI
 .gpu/
 

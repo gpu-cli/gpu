@@ -7,6 +7,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Store HuggingFace models on the workspace volume (has more space than container disk)
+export HF_HOME="$SCRIPT_DIR/.hf_cache"
+mkdir -p "$HF_HOME"
+
 # Process IDs for cleanup
 VLLM_PID=""
 WEB_PID=""
@@ -66,43 +70,56 @@ if [ -n "$HF_TOKEN" ]; then
   export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
 fi
 
-# Start vLLM server in background
-echo "Starting vLLM server..."
-echo "Command: python -m vllm.entrypoints.openai.api_server ${VLLM_ARGS[*]}"
-echo ""
-python -m vllm.entrypoints.openai.api_server "${VLLM_ARGS[@]}" &
-VLLM_PID=$!
+# Check if vLLM is already running (from previous job)
+if curl -sf http://localhost:8000/v1/models > /dev/null 2>&1; then
+  echo "vLLM is already running (reusing existing server)"
+  VLLM_PID=""
+else
+  # Start vLLM server in background
+  echo "Starting vLLM server..."
+  echo "Command: python -m vllm.entrypoints.openai.api_server ${VLLM_ARGS[*]}"
+  echo ""
+  python -m vllm.entrypoints.openai.api_server "${VLLM_ARGS[@]}" &
+  VLLM_PID=$!
 
-# Wait for vLLM to be ready (model loading can take 30-120+ seconds)
-echo "Waiting for vLLM API (this may take a few minutes for large models)..."
-TIMEOUT=180
-ELAPSED=0
-while [ $ELAPSED -lt $TIMEOUT ]; do
-  if curl -sf http://localhost:8000/v1/models > /dev/null 2>&1; then
-    echo "vLLM is ready!"
-    break
-  fi
-  if ! kill -0 $VLLM_PID 2>/dev/null; then
-    echo "Error: vLLM process died unexpectedly"
+  # Wait for vLLM to be ready (model loading can take 30-120+ seconds)
+  echo "Waiting for vLLM API (this may take a few minutes for large models)..."
+  TIMEOUT=180
+  ELAPSED=0
+  while [ $ELAPSED -lt $TIMEOUT ]; do
+    if curl -sf http://localhost:8000/v1/models > /dev/null 2>&1; then
+      echo "vLLM is ready!"
+      break
+    fi
+    if ! kill -0 $VLLM_PID 2>/dev/null; then
+      echo "Error: vLLM process died unexpectedly"
+      exit 1
+    fi
+    sleep 3
+    ELAPSED=$((ELAPSED + 3))
+    echo "  Still loading... ($ELAPSED/${TIMEOUT}s)"
+  done
+
+  if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "Error: vLLM failed to start within ${TIMEOUT} seconds"
     exit 1
   fi
-  sleep 3
-  ELAPSED=$((ELAPSED + 3))
-  echo "  Still loading... ($ELAPSED/${TIMEOUT}s)"
-done
-
-if [ $ELAPSED -ge $TIMEOUT ]; then
-  echo "Error: vLLM failed to start within ${TIMEOUT} seconds"
-  exit 1
 fi
 
 # Copy models.json to ui/ so the web server can serve it
 echo ""
-echo "Starting Web UI on port 8080..."
 cp -f ./models.json ./ui/models.json 2>/dev/null || true
-cd ui && python -m http.server 8080 --bind 0.0.0.0 &
-WEB_PID=$!
-cd "$SCRIPT_DIR"
+
+# Check if Web UI is already running (from previous job)
+if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+  echo "Web UI is already running on port 8080 (reusing existing server)"
+  WEB_PID=""
+else
+  echo "Starting Web UI on port 8080..."
+  cd ui && python -m http.server 8080 --bind 0.0.0.0 &
+  WEB_PID=$!
+  cd "$SCRIPT_DIR"
+fi
 
 echo ""
 echo "========================================"
