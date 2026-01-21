@@ -38,7 +38,7 @@
   },
 
    // Keep pod alive for 60 min after idle (model loading takes time)
-   "cooldown_minutes": 60,
+   "keep_alive_minutes": 60,
 
   "template": {
     "name": "ComfyUI + Qwen Image Edit",

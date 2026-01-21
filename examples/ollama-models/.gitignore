@@ -1,0 +1,9 @@
+# Generated files (template-specific)
+ui/models.json
+
+# Logs
+*.log
+
+# Additional editor files
+*.swo
+Thumbs.db
