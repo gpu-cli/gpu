@@ -6,6 +6,3 @@ requires-python = ">=3.10"
 
 # No runtime dependencies - Web UI is static HTML/JS
 # Ollama handles all LLM operations natively
-
-[tool.gpu]
-outputs = ["outputs/"]

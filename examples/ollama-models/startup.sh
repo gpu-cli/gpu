@@ -7,6 +7,27 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Graceful shutdown handler
+cleanup() {
+  echo ""
+  echo "Shutting down..."
+  [ -n "$WEB_PID" ] && kill "$WEB_PID" 2>/dev/null
+  [ -n "$OLLAMA_PID" ] && kill "$OLLAMA_PID" 2>/dev/null
+  wait
+  echo "Shutdown complete."
+  exit 0
+}
+trap cleanup SIGTERM SIGINT
+
+# Validate model name (alphanumeric, colons, dots, hyphens, slashes only)
+validate_model_name() {
+  local name="$1"
+  if [[ "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$ ]]; then
+    return 0
+  fi
+  return 1
+}
+
 echo "=== Ollama Models Template ==="
 echo "Working directory: $SCRIPT_DIR"
 echo ""
@@ -39,12 +60,16 @@ if [ -f "./models.json" ]; then
   MODELS=$(jq -r '.models[]' ./models.json 2>/dev/null || echo "")
 
   if [ -n "$MODELS" ]; then
-    echo "$MODELS" | while read model; do
+    while IFS= read -r model; do
       if [ -n "$model" ]; then
-        echo "  Pulling: $model"
-        ollama pull "$model" || echo "  Warning: Failed to pull $model"
+        if validate_model_name "$model"; then
+          echo "  Pulling: $model"
+          ollama pull "$model" || echo "  Warning: Failed to pull $model"
+        else
+          echo "  Skipping invalid model name: $model"
+        fi
       fi
-    done
+    done <<< "$MODELS"
     echo "Model pre-pull complete!"
   else
     echo "  No models configured in models.json"

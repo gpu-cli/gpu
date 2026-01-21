@@ -9,6 +9,22 @@ results/
 __pycache__/
 *.py[cod]
 *.egg-info/
+.venv/
+venv/
+
+# Environment files (may contain secrets)
+.env
+.env.*
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
+Thumbs.db

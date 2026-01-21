@@ -3,11 +3,25 @@
 
 const OLLAMA_API = 'http://localhost:11434';
 const MODELS_CONFIG = './models.json';
+const MAX_HISTORY_LENGTH = 50;  // Limit conversation history to prevent memory issues
 
 // State
 let currentModel = null;
 let conversationHistory = [];
 let isStreaming = false;
+
+// Trim conversation history to prevent unbounded memory growth
+function trimHistory() {
+  if (conversationHistory.length > MAX_HISTORY_LENGTH) {
+    // Keep system message if present, then most recent messages
+    const hasSystem = conversationHistory[0]?.role === 'system';
+    const startIndex = hasSystem ? 1 : 0;
+    const keepCount = MAX_HISTORY_LENGTH - startIndex;
+    conversationHistory = hasSystem
+      ? [conversationHistory[0], ...conversationHistory.slice(-keepCount)]
+      : conversationHistory.slice(-keepCount);
+  }
+}
 
 // DOM Elements
 const modelSelect = document.getElementById('model-select');
@@ -228,17 +242,21 @@ async function sendMessage() {
             scrollToBottom();
           }
         } catch (e) {
-          // Ignore parse errors for incomplete chunks
+          // Log non-JSON lines in debug mode (incomplete chunks are expected during streaming)
+          if (line.trim() && !line.includes('"done"')) {
+            console.debug('Skipped non-JSON chunk:', line.substring(0, 100));
+          }
         }
       }
     }
 
-    // Add to history
+    // Add to history and trim if needed
     conversationHistory.push({ role: 'assistant', content: fullResponse });
+    trimHistory();
 
   } catch (e) {
     console.error('Error sending message:', e);
-    contentDiv.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+    contentDiv.innerHTML = `<span class="error">Error: ${escapeHtml(e.message)}</span>`;
   } finally {
     isStreaming = false;
     sendBtn.disabled = false;
@@ -260,9 +278,17 @@ function addMessage(role, content) {
   return div;
 }
 
-// Basic markdown formatting
+// Escape HTML to prevent XSS attacks
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Basic markdown formatting (escapes HTML first to prevent XSS)
 function formatMarkdown(text) {
-  return text
+  const escaped = escapeHtml(text);
+  return escaped
     .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')

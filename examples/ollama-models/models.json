@@ -4,9 +4,10 @@
   "// Model format": "name:tag (e.g., llama3.2:7b, mistral:latest)",
 
   "models": [
+    "qwen2.5-coder:7b",
     "llama3.2:3b",
     "mistral:7b"
   ],
 
-  "default": "llama3.2:3b"
+  "default": "qwen2.5-coder:7b"
 }

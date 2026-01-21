@@ -5,10 +5,9 @@ Run Open Source LLMs on remote GPUs with Ollama. Includes a lightweight Web UI a
 ## Quick Start
 
 ```bash
-cd ~/Development/gpu/examples/ollama-models
+cd examples/ollama-models
 
 # (Optional) Edit models.json to configure which models to pre-pull
-# By default: llama3.2:3b and mistral:7b
 
 # Start the pod
 gpu run
@@ -122,6 +121,36 @@ message = client.messages.create(
 )
 print(message.content)
 ```
+
+## Using with Claude Code
+
+This template can serve as a backend for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via Ollama's Anthropic API compatibility.
+
+### Configuration
+
+1. Start the pod: `gpu run`
+2. Configure Claude Code to use the Ollama endpoint:
+
+```bash
+# Set environment variables
+export ANTHROPIC_BASE_URL=http://localhost:11434
+export ANTHROPIC_API_KEY=ollama  # Required but ignored
+
+# Run Claude Code
+claude
+```
+
+Or create a Claude Code settings file with custom provider configuration.
+
+### Recommended Models for Claude Code
+
+| Model | Size | Context | Best For |
+|-------|------|---------|----------|
+| `qwen2.5-coder:7b` | 4GB | 32K | Code generation, refactoring |
+| `qwen2.5-coder:14b` | 9GB | 32K | Complex code tasks |
+| `deepseek-coder-v2:16b` | 9GB | 128K | Long context, large codebases |
+
+**Note:** Claude Code benefits from models with 32K+ context. Ensure sufficient VRAM for your chosen model.
 
 ## Pull Additional Models
 
