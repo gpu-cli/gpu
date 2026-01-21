@@ -2,7 +2,7 @@
 // Lightweight chat interface for Ollama models
 
 const OLLAMA_API = 'http://localhost:11434';
-const MODELS_CONFIG = '../models.json';
+const MODELS_CONFIG = './models.json';
 
 // State
 let currentModel = null;

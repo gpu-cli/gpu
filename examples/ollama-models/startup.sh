@@ -56,6 +56,8 @@ fi
 # Start Web UI server (Python's built-in HTTP server)
 echo ""
 echo "Starting Web UI on port 8080..."
+# Copy models.json to ui/ so the web server can serve it
+cp -f ./models.json ./ui/models.json 2>/dev/null || true
 cd ui && python -m http.server 8080 --bind 0.0.0.0 &
 WEB_PID=$!
 
