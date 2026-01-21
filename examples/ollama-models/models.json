@@ -1,0 +1,12 @@
+{
+  "// CONFIGURATION": "Edit the models array below to specify which models to pre-pull",
+  "// Available models": "https://ollama.com/library",
+  "// Model format": "name:tag (e.g., llama3.2:7b, mistral:latest)",
+
+  "models": [
+    "llama3.2:3b",
+    "mistral:7b"
+  ],
+
+  "default": "llama3.2:3b"
+}

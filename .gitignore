@@ -19,3 +19,10 @@ venv/
 
 # Documentation
 examples/CLI_TEMPLATES_GUIDE.md
+
+# GPU CLI internal state
+**/pods/
+**/.gpu/
+**/build/
+**/outputs/
+**/results/

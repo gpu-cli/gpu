@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ollama Chat - GPU CLI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="title">Ollama Chat</h1>
+        <span class="subtitle">GPU CLI</span>
+      </div>
+      <div class="header-right">
+        <div class="model-selector">
+          <select id="model-select" aria-label="Select model">
+            <option value="">Loading models...</option>
+          </select>
+          <button id="pull-model-btn" class="btn btn-icon" title="Pull new model" aria-label="Pull new model">+</button>
+        </div>
+        <div class="status" id="status">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-text" id="status-text">Connecting...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Chat Messages -->
+    <main class="chat-container" id="chat-container">
+      <div class="messages" id="messages">
+        <div class="welcome-message">
+          <h2>Welcome to Ollama Chat</h2>
+          <p>Select a model above and start chatting. Your conversation runs on a remote GPU.</p>
+          <div class="endpoints-info">
+            <div class="endpoint">
+              <span class="endpoint-label">API Endpoint:</span>
+              <code>http://localhost:11434</code>
+            </div>
+            <div class="endpoint">
+              <span class="endpoint-label">OpenAI-compatible:</span>
+              <code>/v1/chat/completions</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="input-area">
+      <form id="chat-form" class="chat-form">
+        <textarea
+          id="user-input"
+          placeholder="Type a message..."
+          rows="1"
+          aria-label="Message input"
+        ></textarea>
+        <button type="submit" id="send-btn" class="btn btn-primary" disabled>
+          <span class="btn-text">Send</span>
+          <span class="btn-loading hidden">...</span>
+        </button>
+      </form>
+    </footer>
+
+    <!-- Pull Model Modal -->
+    <div id="pull-modal" class="modal hidden" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-backdrop" id="modal-backdrop"></div>
+      <div class="modal-content">
+        <h2 id="modal-title">Pull Model</h2>
+        <p class="modal-description">Enter a model name from <a href="https://ollama.com/library" target="_blank" rel="noopener">ollama.com/library</a></p>
+        <input
+          type="text"
+          id="model-name-input"
+          placeholder="e.g., llama3.2, mistral, codellama"
+          aria-label="Model name"
+        >
+        <div class="modal-actions">
+          <button id="pull-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="pull-confirm" class="btn btn-primary">Pull Model</button>
+        </div>
+        <div id="pull-progress" class="pull-progress hidden">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="progress-text" id="progress-text">Starting download...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

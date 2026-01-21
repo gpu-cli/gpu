@@ -1,0 +1,11 @@
+[project]
+name = "ollama-models"
+version = "0.1.0"
+description = "GPU CLI template for running Ollama LLMs on remote GPUs"
+requires-python = ">=3.10"
+
+# No runtime dependencies - Web UI is static HTML/JS
+# Ollama handles all LLM operations natively
+
+[tool.gpu]
+outputs = ["outputs/"]

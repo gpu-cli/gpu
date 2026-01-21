@@ -1,0 +1,86 @@
+#!/bin/bash
+# Ollama Models Template - Startup Script
+# Starts Ollama server, pre-pulls configured models, and launches Web UI
+set -e
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+echo "=== Ollama Models Template ==="
+echo "Working directory: $SCRIPT_DIR"
+echo ""
+
+# Start Ollama server in background
+echo "Starting Ollama server..."
+ollama serve &
+OLLAMA_PID=$!
+
+# Wait for Ollama to be ready
+echo "Waiting for Ollama API..."
+for i in {1..60}; do
+  if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+    echo "Ollama is ready!"
+    break
+  fi
+  if [ $i -eq 60 ]; then
+    echo "Error: Ollama failed to start within 60 seconds"
+    exit 1
+  fi
+  sleep 1
+done
+
+# Pre-pull configured models from models.json
+if [ -f "./models.json" ]; then
+  echo ""
+  echo "Pre-pulling configured models..."
+
+  # Read model names from models.json array
+  MODELS=$(jq -r '.models[]' ./models.json 2>/dev/null || echo "")
+
+  if [ -n "$MODELS" ]; then
+    echo "$MODELS" | while read model; do
+      if [ -n "$model" ]; then
+        echo "  Pulling: $model"
+        ollama pull "$model" || echo "  Warning: Failed to pull $model"
+      fi
+    done
+    echo "Model pre-pull complete!"
+  else
+    echo "  No models configured in models.json"
+  fi
+else
+  echo "Warning: models.json not found, skipping model pre-pull"
+fi
+
+# Start Web UI server (Python's built-in HTTP server)
+echo ""
+echo "Starting Web UI on port 8080..."
+cd ui && python -m http.server 8080 --bind 0.0.0.0 &
+WEB_PID=$!
+
+echo ""
+echo "========================================"
+echo "         OLLAMA MODELS READY"
+echo "========================================"
+echo ""
+echo "  Ollama API:  http://localhost:11434"
+echo "  Web UI:      http://localhost:8080"
+echo ""
+echo "  API Examples:"
+echo "    # List models"
+echo "    curl http://localhost:11434/api/tags"
+echo ""
+echo "    # Chat (OpenAI-compatible)"
+echo "    curl http://localhost:11434/v1/chat/completions \\"
+echo "      -H 'Content-Type: application/json' \\"
+echo "      -d '{\"model\":\"llama3.2:3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello!\"}]}'"
+echo ""
+echo "  Pull more models:"
+echo "    ollama pull codellama:7b"
+echo "    ollama pull deepseek-r1:7b"
+echo ""
+echo "========================================"
+
+# Wait for Ollama (main process) - keeps container running
+wait $OLLAMA_PID
