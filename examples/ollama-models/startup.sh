@@ -61,26 +61,50 @@ else
   done
 fi
 
-# Pre-pull configured models from models.json
+# Pre-pull configured models from models.json (in background to avoid blocking)
+# This prevents SSH connection timeouts during long model downloads
 if [ -f "./models.json" ]; then
   echo ""
-  echo "Pre-pulling configured models..."
+  echo "Starting model downloads in background..."
 
   # Read model names from models.json array
   MODELS=$(jq -r '.models[]' ./models.json 2>/dev/null || echo "")
 
   if [ -n "$MODELS" ]; then
-    while IFS= read -r model; do
-      if [ -n "$model" ]; then
-        if validate_model_name "$model"; then
-          echo "  Pulling: $model"
-          ollama pull "$model" || echo "  Warning: Failed to pull $model"
-        else
-          echo "  Skipping invalid model name: $model"
+    # Download models in background so startup completes quickly
+    # Stream progress output to keep SSH connection alive during long downloads
+    (
+      while IFS= read -r model; do
+        if [ -n "$model" ]; then
+          if validate_model_name "$model"; then
+            echo "[download] Starting: $model"
+            # Stream ollama output to keep connection alive during long downloads
+            # Filter to only show meaningful progress updates (reduces noise)
+            ollama pull "$model" 2>&1 | while IFS= read -r line; do
+              case "$line" in
+                *pulling*|*verifying*|*writing*|*success*|*%*)
+                  echo "[download] $line"
+                  ;;
+              esac
+            done
+            if [ ${PIPESTATUS[0]} -eq 0 ]; then
+              echo "[download] ✓ $model ready!"
+            else
+              echo "[download] ✗ Failed to pull $model"
+            fi
+          fi
         fi
-      fi
-    done <<< "$MODELS"
-    echo "Model pre-pull complete!"
+      done <<< "$MODELS"
+      echo ""
+      echo "[download] ========================================"
+      echo "[download]   ALL MODELS DOWNLOADED!"
+      echo "[download]   Run 'ollama list' to see available models"
+      echo "[download] ========================================"
+    ) &
+    PULL_PID=$!
+    echo "  Model download started (PID: $PULL_PID)"
+    echo "  Check progress: ollama list"
+    echo "  View logs: ps aux | grep ollama"
   else
     echo "  No models configured in models.json"
   fi
@@ -119,7 +143,7 @@ echo ""
 echo "    # Chat (OpenAI-compatible)"
 echo "    curl http://localhost:11434/v1/chat/completions \\"
 echo "      -H 'Content-Type: application/json' \\"
-echo "      -d '{\"model\":\"glm-4.7-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello!\"}]}'"
+echo "      -d '{\"model\":\"llama3.2:3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello!\"}]}'"
 echo ""
 echo "  Pull more models:"
 echo "    ollama pull codellama:7b"

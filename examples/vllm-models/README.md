@@ -44,7 +44,7 @@ Edit `models.json` to specify which model to run:
 
 ```json
 {
-  "model": "zai-org/GLM-4.7-Flash",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
   "vllm_args": {
     "gpu_memory_utilization": 0.9,
     "max_model_len": 32768,
@@ -66,13 +66,13 @@ Edit `models.json` to specify which model to run:
 
 | Model | Size | VRAM | Auth | Best For |
 |-------|------|------|------|----------|
-| `zai-org/GLM-4.7-Flash` | 19GB | 24GB | No | **Default** - coding, 200K context |
+| `Qwen/Qwen2.5-7B-Instruct` | 14GB | 24GB | No | **Default** - good quality, no auth |
 | `Qwen/Qwen2.5-1.5B-Instruct` | 3GB | 8GB | No | Fast, small GPU |
-| `Qwen/Qwen2.5-7B-Instruct` | 14GB | 24GB | No | Good quality |
 | `Qwen/Qwen2.5-Coder-7B-Instruct` | 14GB | 24GB | No | Code-focused |
 | `mistralai/Mistral-7B-Instruct-v0.3` | 14GB | 24GB | No | High quality |
-| `meta-llama/Llama-3.2-3B-Instruct` | 6GB | 12GB | Yes | Popular (requires HF token) |
+| `meta-llama/Llama-3.2-3B-Instruct` | 6GB | 12GB | Yes | Small, fast (requires HF token) |
 | `meta-llama/Llama-3.1-8B-Instruct` | 16GB | 24GB | Yes | High quality (requires HF token) |
+| `zai-org/GLM-4.7-Flash` | 19GB | 24GB | No | Excellent quality, 200K context |
 
 ### Gated Models (Llama, etc.)
 
@@ -101,7 +101,7 @@ curl http://localhost:8000/v1/models
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "zai-org/GLM-4.7-Flash",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
@@ -112,7 +112,7 @@ curl http://localhost:8000/v1/chat/completions \
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "zai-org/GLM-4.7-Flash",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
     "messages": [{"role": "user", "content": "Write a haiku about GPUs"}],
     "stream": true
   }'
@@ -129,7 +129,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="zai-org/GLM-4.7-Flash",
+    model="Qwen/Qwen2.5-7B-Instruct",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
@@ -143,7 +143,7 @@ from langchain_openai import ChatOpenAI
 llm = ChatOpenAI(
     base_url="http://localhost:8000/v1",
     api_key="vllm",
-    model="zai-org/GLM-4.7-Flash"
+    model="Qwen/Qwen2.5-7B-Instruct"
 )
 
 response = llm.invoke("Hello!")
@@ -269,4 +269,4 @@ And update `gpu.jsonc` to request multiple GPUs:
 - [vLLM Documentation](https://docs.vllm.ai/)
 - [vLLM Supported Models](https://docs.vllm.ai/en/latest/models/supported_models.html)
 - [HuggingFace Model Hub](https://huggingface.co/models)
-- [GLM-4.7-Flash Model](https://huggingface.co/zai-org/GLM-4.7-Flash)
+- [Qwen2.5-7B-Instruct Model](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct)

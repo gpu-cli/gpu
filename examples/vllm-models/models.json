@@ -1,5 +1,5 @@
 {
-  "model": "zai-org/GLM-4.7-Flash",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
   "vllm_args": {
     "gpu_memory_utilization": 0.9,
     "max_model_len": 32768,

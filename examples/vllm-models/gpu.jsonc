@@ -35,6 +35,10 @@
   // Startup launches vLLM server + Web UI
   "startup": "bash ./startup.sh",
 
+  // Don't sync model files back - they're huge and only needed on the pod
+  // Empty array disables output auto-detection
+  "outputs": [],
+
   // Readiness hook - wait for vLLM API to be ready before marking pod as ready
   // vLLM model loading is slow (30-120s depending on model size)
   "hooks": {
