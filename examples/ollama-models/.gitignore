@@ -10,3 +10,6 @@ ui/models.json
 # Additional editor files
 *.swo
 Thumbs.db
+
+# Temp files
+.tmp*
