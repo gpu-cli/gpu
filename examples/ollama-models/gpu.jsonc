@@ -36,9 +36,9 @@
   // Startup launches Ollama server + Web UI
   "startup": "bash ./startup.sh",
 
-  // Don't sync model files back - they're huge and only needed on the pod
-  // Empty array disables output auto-detection
-  "outputs": [],
+  // Sync conversation database back to local machine
+  // WAL checkpoint happens on shutdown for clean sync
+  "outputs": ["data/conversations.db"],
 
   // Readiness hook - wait for Ollama API to be ready before marking pod as ready
   "hooks": {
