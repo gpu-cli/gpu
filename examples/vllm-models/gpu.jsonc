@@ -52,16 +52,26 @@
     }
   },
 
-  // Environment - use official vLLM Docker image
+  // Environment - use RunPod's pre-cached PyTorch image for fast startup
   "environment": {
-    // Official vLLM OpenAI-compatible server image
-    // Includes vLLM with all dependencies pre-installed
-    "base_image": "vllm/vllm-openai:latest",
+    // RunPod's PyTorch images are pre-cached on their machines (fast pull)
+    // Using external images like vllm/vllm-openai:latest requires pulling
+    // several GB each time, causing long startup times
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
 
     "system": {
       "apt": [
         { "name": "curl" },
         { "name": "jq" }
+      ]
+    },
+
+    // Install vLLM during image build (runs once, cached for subsequent runs)
+    "shell": {
+      "steps": [
+        {
+          "run": "pip install vllm --no-cache-dir"
+        }
       ]
     }
   },
@@ -70,10 +80,12 @@
   // Set via: gpu secret set HF_TOKEN <your-token>
   "inputs": [
     {
-      "name": "hf_token",
-      "secret": true,
-      "optional": true,
-      "description": "HuggingFace token for gated models (Llama, etc.)"
+      "type": "secret",
+      "key": "hf_token",
+      "label": "HuggingFace Token",
+      "description": "HuggingFace token for gated models (Llama, etc.)",
+      "help": "Get your token at https://huggingface.co/settings/tokens",
+      "required": false
     }
   ]
 }
