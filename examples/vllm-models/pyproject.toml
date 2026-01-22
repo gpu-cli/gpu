@@ -1,0 +1,13 @@
+[project]
+name = "vllm-models"
+version = "0.1.0"
+description = "Run Open Source LLMs with vLLM on remote GPUs"
+readme = "README.md"
+requires-python = ">=3.10"
+
+# No dependencies - vLLM is pre-installed in the Docker image
+dependencies = []
+
+[tool.gpu]
+# Output patterns to sync back from the pod
+outputs = []

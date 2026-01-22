@@ -1,7 +1,6 @@
 {
   "models": [
-    "qwen2.5-coder:14b",
     "llama3.2:3b"
   ],
-  "default": "qwen2.5-coder:14b"
+  "default": "llama3.2:3b"
 }

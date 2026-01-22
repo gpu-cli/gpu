@@ -21,16 +21,24 @@
     { "type": "A100 PCIe 80GB" }       // 80GB - for 70B+ models
   ],
   "min_vram": 16,
+  "max_price": 1.50,  // Max $/hr - enables auto-fallback to available GPUs within budget
+
+  // Disk space for models (glm-4.7-flash ~18GB + llama3.2:3b ~2GB + system)
+  "workspace_size_gb": 50,
 
   // Dual port forwarding - both ports accessible on localhost after gpu run
   "ports": [11434, 8080],
 
   // Keep-alive time after last activity (pod stops after this idle period)
-  // Set higher to allow model loading time (large models take 30-60s)
-  "keep_alive_minutes": 5,
+  // Set higher to allow model loading time (large models can take 5-15 minutes)
+  "keep_alive_minutes": 20,
 
   // Startup launches Ollama server + Web UI
   "startup": "bash ./startup.sh",
+
+  // Don't sync model files back - they're huge and only needed on the pod
+  // Empty array disables output auto-detection
+  "outputs": [],
 
   // Readiness hook - wait for Ollama API to be ready before marking pod as ready
   "hooks": {

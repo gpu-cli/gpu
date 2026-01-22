@@ -33,7 +33,7 @@
   "workspace_size_gb": 150,
 
   // Keep pod alive for 60 min after idle (model loading takes time)
-  "cooldown_minutes": 60,
+  "keep_alive_minutes": 60,
 
   // No output sync - interactive use only
   "outputs": [],

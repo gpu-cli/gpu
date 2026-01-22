@@ -1,0 +1,26 @@
+# Generated files (template-specific)
+ui/models.json
+
+# HuggingFace model cache (stored on volume, don't sync back)
+.hf_cache/
+
+# GPU CLI
+.gpu/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Logs
+*.log
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store

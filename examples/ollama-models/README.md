@@ -124,31 +124,70 @@ print(message.content)
 
 ## Using with Claude Code
 
-This template can serve as a backend for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via Ollama's Anthropic API compatibility.
+This template can serve as a backend for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via Ollama's Anthropic API compatibility (requires Ollama 0.14.0+).
 
-### Configuration
+### Setup
 
-1. Start the pod: `gpu run`
-2. Configure Claude Code to use the Ollama endpoint:
+**1. Start the pod:**
 
 ```bash
-# Set environment variables (add to ~/.zshrc or ~/.bashrc)
+gpu run
+```
+
+**2. Log out of your current Claude Code session** (if active):
+
+Claude Code caches authentication. You must log out first to switch to a different backend.
+
+```bash
+claude /logout
+```
+
+**3. Configure environment and run Claude Code:**
+
+**Option A: Inline (one-time use)**
+```bash
+ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://localhost:11434 claude --model llama3.2:3b
+```
+
+**Option B: Shell config (persistent)**
+
+Add to your `~/.zshrc` or `~/.bashrc`:
+```bash
 export ANTHROPIC_AUTH_TOKEN=ollama
 export ANTHROPIC_BASE_URL=http://localhost:11434
+```
 
-# Run Claude Code with your model
-claude --model qwen2.5-coder:14b
+Then reload and run:
+```bash
+source ~/.zshrc  # or ~/.bashrc
+claude --model llama3.2:3b
+```
+
+### Switching Back to Anthropic
+
+To switch back to using Claude models via Anthropic's API:
+
+```bash
+# Remove or comment out the environment variables from your shell config
+# Then unset them in your current session:
+unset ANTHROPIC_AUTH_TOKEN
+unset ANTHROPIC_BASE_URL
+
+# Log out and log back in
+claude /logout
+claude  # Will prompt for Anthropic authentication
 ```
 
 ### Recommended Models for Claude Code
 
 | Model | Size | Context | VRAM | Best For |
 |-------|------|---------|------|----------|
-| `qwen2.5-coder:14b` | 9GB | 32K | 16GB | Great balance of speed/quality (default) |
-| `qwen2.5-coder:32b` | 20GB | 32K | 24GB | GPT-4o competitive, best quality |
-| `qwen2.5-coder:7b` | 4.7GB | 32K | 8GB | Fast, good for simple tasks |
+| `llama3.2:3b` | 2GB | 128K | 4GB | Fast, good for simple tasks |
+| `qwen2.5-coder:7b` | 4.7GB | 32K | 8GB | Code-focused, good quality |
+| `qwen2.5-coder:14b` | 9GB | 32K | 16GB | Great balance of speed/quality |
+| `glm-4.7-flash` | 19GB | 198K | 24GB | Excellent quality, huge context |
 
-**Note:** Claude Code benefits from models with 32K+ context. The 14B model is the default - fast to download and great quality.
+**Note:** Claude Code benefits from models with large context windows (32K+ recommended).
 
 ## Pull Additional Models
 
@@ -233,5 +272,5 @@ The following features are being developed by other engineers:
 - **Cooldown Hook**: Automatic cooldown extension during model loading
 
 Current workarounds:
-- Use longer `cooldown_minutes` for large models
+- Use longer `keep_alive_minutes` for large models
 - Pre-pull models in `models.json` to reduce first-use latency
