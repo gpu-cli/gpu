@@ -4,6 +4,14 @@ ui/models.json
 # HuggingFace model cache (stored on volume, don't sync back)
 .hf_cache/
 
+# SQLite database (synced but not committed)
+data/conversations.db
+data/conversations.db-wal
+data/conversations.db-shm
+
+# Keep directory structure
+!data/.gitkeep
+
 # GPU CLI
 .gpu/
 

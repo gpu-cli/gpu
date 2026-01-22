@@ -4,6 +4,14 @@ ui/models.json
 # Ollama models (stored on volume, don't sync back)
 .ollama/
 
+# SQLite database (synced but not committed)
+data/conversations.db
+data/conversations.db-wal
+data/conversations.db-shm
+
+# Keep directory structure
+!data/.gitkeep
+
 # Logs
 *.log
 

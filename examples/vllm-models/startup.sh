@@ -19,6 +19,8 @@ WEB_PID=""
 cleanup() {
   echo ""
   echo "Shutting down..."
+  # Checkpoint database for clean sync (consolidates WAL into main db)
+  curl -sf http://localhost:8080/api/checkpoint > /dev/null 2>&1 || true
   [ -n "$WEB_PID" ] && kill "$WEB_PID" 2>/dev/null
   [ -n "$VLLM_PID" ] && kill "$VLLM_PID" 2>/dev/null
   wait
@@ -115,10 +117,9 @@ if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
   echo "Web UI is already running on port 8080 (reusing existing server)"
   WEB_PID=""
 else
-  echo "Starting Web UI on port 8080..."
-  cd ui && python -m http.server 8080 --bind 0.0.0.0 &
+  echo "Starting Web UI on port 8080 (with conversation persistence)..."
+  python server.py &
   WEB_PID=$!
-  cd "$SCRIPT_DIR"
 fi
 
 echo ""

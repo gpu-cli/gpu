@@ -1,5 +1,5 @@
 // Ollama Chat - GPU CLI Web UI
-// Lightweight chat interface for Ollama models
+// Lightweight chat interface for Ollama models with conversation persistence
 
 const OLLAMA_API = 'http://localhost:11434';
 const MODELS_CONFIG = './models.json';
@@ -9,6 +9,8 @@ const MAX_HISTORY_LENGTH = 50;  // Limit conversation history to prevent memory 
 let currentModel = null;
 let conversationHistory = [];
 let isStreaming = false;
+let currentConversationId = null;
+let conversations = [];
 
 // Trim conversation history to prevent unbounded memory growth
 function trimHistory() {
@@ -44,10 +46,15 @@ const pullProgress = document.getElementById('pull-progress');
 const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
 
+// Conversation sidebar elements
+const conversationList = document.getElementById('conversation-list');
+const newConversationBtn = document.getElementById('new-conversation-btn');
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   await checkConnection();
   await loadModels();
+  await loadConversations();
   setupEventListeners();
   autoResizeTextarea();
 });
@@ -164,8 +171,190 @@ function formatSize(bytes) {
   return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
 }
 
+// ==========================================
+// Conversation Persistence Functions
+// ==========================================
+
+// Load all conversations from server
+async function loadConversations() {
+  try {
+    const response = await fetch('/api/conversations');
+    if (response.ok) {
+      conversations = await response.json();
+      renderConversationList();
+      // Load most recent conversation if exists
+      if (conversations.length > 0 && !currentConversationId) {
+        await loadConversation(conversations[0].id);
+      }
+    }
+  } catch (e) {
+    console.log('Conversation persistence not available (running without server.py)');
+  }
+}
+
+// Render conversation list in sidebar
+function renderConversationList() {
+  if (!conversationList) return;
+
+  if (conversations.length === 0) {
+    conversationList.innerHTML = '<div class="no-conversations">No conversations yet</div>';
+    return;
+  }
+
+  conversationList.innerHTML = conversations.map(conv => `
+    <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}"
+         data-id="${conv.id}">
+      <div class="conversation-title">${escapeHtml(conv.title)}</div>
+      <div class="conversation-meta">
+        <span>${conv.message_count || 0} messages</span>
+        <button class="conversation-delete" data-id="${conv.id}" title="Delete">x</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Add click handlers
+  conversationList.querySelectorAll('.conversation-item').forEach(item => {
+    item.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('conversation-delete')) {
+        e.stopPropagation();
+        await deleteConversation(e.target.dataset.id);
+        return;
+      }
+      await loadConversation(item.dataset.id);
+    });
+  });
+}
+
+// Load a specific conversation
+async function loadConversation(id) {
+  try {
+    const response = await fetch(`/api/conversations/${id}`);
+    if (!response.ok) throw new Error('Failed to load conversation');
+
+    const conv = await response.json();
+    currentConversationId = conv.id;
+    conversationHistory = conv.messages.map(m => ({ role: m.role, content: m.content }));
+
+    // Update UI
+    renderConversationList();
+    renderMessages();
+
+    // Update model if conversation has one
+    if (conv.model && modelSelect) {
+      const option = Array.from(modelSelect.options).find(o => o.value === conv.model);
+      if (option) {
+        modelSelect.value = conv.model;
+        currentModel = conv.model;
+      }
+    }
+  } catch (e) {
+    console.error('Error loading conversation:', e);
+  }
+}
+
+// Create a new conversation
+async function createNewConversation() {
+  try {
+    const response = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: currentModel })
+    });
+
+    if (!response.ok) throw new Error('Failed to create conversation');
+
+    const conv = await response.json();
+    currentConversationId = conv.id;
+    conversationHistory = [];
+    clearMessages();
+    await loadConversations();
+  } catch (e) {
+    console.error('Error creating conversation:', e);
+    // Fallback: just clear local state
+    currentConversationId = null;
+    conversationHistory = [];
+    clearMessages();
+  }
+}
+
+// Save a message to the current conversation
+async function saveMessage(role, content) {
+  if (!currentConversationId) return;
+
+  try {
+    await fetch(`/api/conversations/${currentConversationId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, content })
+    });
+  } catch (e) {
+    console.error('Error saving message:', e);
+  }
+}
+
+// Delete a conversation
+async function deleteConversation(id) {
+  try {
+    await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+
+    if (currentConversationId === id) {
+      currentConversationId = null;
+      conversationHistory = [];
+      clearMessages();
+    }
+
+    await loadConversations();
+
+    // Load another conversation if available
+    if (!currentConversationId && conversations.length > 0) {
+      await loadConversation(conversations[0].id);
+    }
+  } catch (e) {
+    console.error('Error deleting conversation:', e);
+  }
+}
+
+// Clear messages from UI
+function clearMessages() {
+  messagesDiv.innerHTML = `
+    <div class="welcome-message">
+      <h2>Welcome to Ollama Chat</h2>
+      <p>Select a model above and start chatting. Your conversation runs on a remote GPU.</p>
+      <div class="endpoints-info">
+        <div class="endpoint">
+          <span class="endpoint-label">API Endpoint:</span>
+          <code>http://localhost:11434</code>
+        </div>
+        <div class="endpoint">
+          <span class="endpoint-label">OpenAI-compatible:</span>
+          <code>/v1/chat/completions</code>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Render all messages from current conversation
+function renderMessages() {
+  messagesDiv.innerHTML = '';
+  conversationHistory.forEach(msg => {
+    addMessage(msg.role, msg.content);
+  });
+}
+
+// ==========================================
+// Event Listeners
+// ==========================================
+
 // Setup event listeners
 function setupEventListeners() {
+  // New conversation button
+  if (newConversationBtn) {
+    newConversationBtn.addEventListener('click', async () => {
+      await createNewConversation();
+    });
+  }
+
   // Model selection
   modelSelect.addEventListener('change', async (e) => {
     const value = e.target.value;
@@ -226,6 +415,11 @@ async function sendMessage() {
   const message = userInput.value.trim();
   if (!message || !currentModel || isStreaming) return;
 
+  // Create conversation if none exists
+  if (!currentConversationId) {
+    await createNewConversation();
+  }
+
   // Clear welcome message if present
   const welcome = messagesDiv.querySelector('.welcome-message');
   if (welcome) welcome.remove();
@@ -235,8 +429,9 @@ async function sendMessage() {
   userInput.value = '';
   userInput.style.height = 'auto';
 
-  // Add to history
+  // Add to history and save
   conversationHistory.push({ role: 'user', content: message });
+  await saveMessage('user', message);
 
   // Show loading state
   isStreaming = true;
@@ -290,8 +485,10 @@ async function sendMessage() {
       }
     }
 
-    // Add to history and trim if needed
+    // Add to history, save, and trim if needed
     conversationHistory.push({ role: 'assistant', content: fullResponse });
+    await saveMessage('assistant', fullResponse);
+    await loadConversations();  // Refresh list to show updated title
     trimHistory();
 
   } catch (e) {
