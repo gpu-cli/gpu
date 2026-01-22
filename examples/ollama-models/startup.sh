@@ -63,50 +63,40 @@ else
   done
 fi
 
-# Pre-pull configured models from models.json (in background to avoid blocking)
-# This prevents SSH connection timeouts during long model downloads
+# Pre-pull configured models from models.json (in foreground to keep SSH active)
+# Running in foreground ensures continuous output, preventing SSH proxy timeouts
+# during large model downloads (e.g., glm-4.7-flash at ~18GB can take 10-30+ minutes)
 if [ -f "./models.json" ]; then
   echo ""
-  echo "Starting model downloads in background..."
+  echo "Starting model downloads..."
 
   # Read model names from models.json array
   MODELS=$(jq -r '.models[]' ./models.json 2>/dev/null || echo "")
 
   if [ -n "$MODELS" ]; then
-    # Download models in background so startup completes quickly
-    # Stream progress output to keep SSH connection alive during long downloads
-    (
-      while IFS= read -r model; do
-        if [ -n "$model" ]; then
-          if validate_model_name "$model"; then
-            echo "[download] Starting: $model"
-            # Stream ollama output to keep connection alive during long downloads
-            # Filter to only show meaningful progress updates (reduces noise)
-            ollama pull "$model" 2>&1 | while IFS= read -r line; do
-              case "$line" in
-                *pulling*|*verifying*|*writing*|*success*|*%*)
-                  echo "[download] $line"
-                  ;;
-              esac
-            done
-            if [ ${PIPESTATUS[0]} -eq 0 ]; then
-              echo "[download] ✓ $model ready!"
-            else
-              echo "[download] ✗ Failed to pull $model"
-            fi
+    # Download models in FOREGROUND to keep SSH connection alive with progress output
+    # This is critical for large models that take 10-30+ minutes to download
+    while IFS= read -r model; do
+      if [ -n "$model" ]; then
+        if validate_model_name "$model"; then
+          echo ""
+          echo "[download] ========================================"
+          echo "[download] Starting: $model"
+          echo "[download] ========================================"
+          # Stream ollama output directly - continuous output keeps SSH alive
+          if ollama pull "$model"; then
+            echo "[download] ✓ $model ready!"
+          else
+            echo "[download] ✗ Failed to pull $model (exit code: $?)"
           fi
         fi
-      done <<< "$MODELS"
-      echo ""
-      echo "[download] ========================================"
-      echo "[download]   ALL MODELS DOWNLOADED!"
-      echo "[download]   Run 'ollama list' to see available models"
-      echo "[download] ========================================"
-    ) &
-    PULL_PID=$!
-    echo "  Model download started (PID: $PULL_PID)"
-    echo "  Check progress: ollama list"
-    echo "  View logs: ps aux | grep ollama"
+      fi
+    done <<< "$MODELS"
+    echo ""
+    echo "[download] ========================================"
+    echo "[download]   ALL MODELS DOWNLOADED!"
+    echo "[download]   Run 'ollama list' to see available models"
+    echo "[download] ========================================"
   else
     echo "  No models configured in models.json"
   fi
