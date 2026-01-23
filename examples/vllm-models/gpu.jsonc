@@ -12,18 +12,18 @@
   "project_id": "vllm-models",
   "provider": "runpod",
 
-  // GPU selection - LLMs benefit from high VRAM
-  // vLLM requires more VRAM than Ollama due to KV cache optimization
+  // GPU selection - Qwen2.5-14B needs ~30GB VRAM, 48GB recommended
+  // GPU type names must match RunPod API exactly
   "gpu_types": [
-    { "type": "RTX 4090" },           // 24GB - great for 7B-14B models
-    { "type": "A40" },                 // 48GB - good for 30B models
-    { "type": "L40S" },                // 48GB - newer, good availability
-    { "type": "A100 PCIe 80GB" }       // 80GB - for 70B+ models
+    { "type": "NVIDIA A40" },
+    { "type": "NVIDIA L40S" },
+    { "type": "NVIDIA A100 80GB PCIe" },
+    { "type": "NVIDIA A100-SXM4-80GB" }
   ],
-  "min_vram": 24,
+  "min_vram": 48,
 
-  // Disk space for models (GLM-4.7-Flash ~18GB + system overhead)
-  "workspace_size_gb": 50,
+  // Disk space for models (Qwen2.5-14B is ~30GB)
+  "workspace_size_gb": 100,
 
   // Dual port forwarding - both ports accessible on localhost after gpu run
   "ports": [8000, 8080],
