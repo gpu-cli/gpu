@@ -12,6 +12,12 @@
   "project_id": "vllm-models",
   "provider": "runpod",
 
+  "template": {
+    "name": "vLLM Models",
+    "description": "High-performance LLM inference with vLLM + Web UI",
+    "author": "gpu-cli"
+  },
+
   // GPU selection - Qwen2.5-14B needs ~30GB VRAM, 48GB recommended
   // GPU type names must match RunPod API exactly
   "gpu_types": [

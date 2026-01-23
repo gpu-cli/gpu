@@ -12,6 +12,12 @@
   "project_id": "ollama-models",
   "provider": "runpod",
 
+  "template": {
+    "name": "Ollama Models",
+    "description": "Run Open Source LLMs on cloud GPUs with Ollama + Web UI",
+    "author": "gpu-cli"
+  },
+
   // GPU selection - LLMs benefit from high VRAM
   // Priority order: try first, fall back to next
   "gpu_types": [
