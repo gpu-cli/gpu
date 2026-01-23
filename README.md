@@ -85,16 +85,18 @@ Claude: [Reviews gpu.jsonc, suggests RTX 4090 instead of A100 for your workload,
 
 ---
 
-## Examples
+## Templates
 
 Ready-to-use templates for common AI/ML workflows:
 
-| Example | GPU | Description |
-|---------|-----|-------------|
-| [ComfyUI](./examples/comfyui/) | RTX 4090 | Node-based Stable Diffusion UI with custom nodes |
-| [AI Video Generation](./examples/wan22-video/) | A100 80GB | Generate videos with Wan 2.2 14B |
-| [Multi-Agent](./examples/multi-agent/) | A100 80GB | vLLM + CrewAI for agentic workflows |
-| [Invoke AI](./examples/invokeai/) | RTX 4090 | Stable Diffusion with a web interface |
+| Template | GPU | Description |
+|----------|-----|-------------|
+| [Ollama Models](./templates/ollama-models/) | RTX 4090 | Run LLMs with Ollama - includes Web UI and OpenAI-compatible API |
+| [vLLM Models](./templates/vllm-models/) | RTX 4090 | High-performance LLM inference with vLLM |
+| [Background Removal](./templates/background-removal/) | RTX 4090 | Remove backgrounds from images using AI |
+| [CrewAI Stock Analysis](./templates/crewai-stock-analysis/) | RTX 4090 | Multi-agent stock analysis with CrewAI + Ollama |
+| [HuggingFace Gradio](./templates/huggingface-gradio/) | RTX 4090 | Run HuggingFace models with Gradio UI |
+| [Qwen Image Edit](./templates/qwen-image-edit/) | RTX 4090 | Edit images using Qwen vision model |
 
 ## Common Commands
 
