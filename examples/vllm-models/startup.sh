@@ -78,15 +78,18 @@ if curl -sf http://localhost:8000/v1/models > /dev/null 2>&1; then
   VLLM_PID=""
 else
   # Start vLLM server in background
+  # vLLM downloads models automatically with progress output (keeps SSH alive)
   echo "Starting vLLM server..."
   echo "Command: python -m vllm.entrypoints.openai.api_server ${VLLM_ARGS[*]}"
+  echo ""
+  echo "vLLM will download the model if not cached. This may take several minutes."
   echo ""
   python -m vllm.entrypoints.openai.api_server "${VLLM_ARGS[@]}" &
   VLLM_PID=$!
 
-  # Wait for vLLM to be ready (model loading can take 30-120+ seconds)
-  echo "Waiting for vLLM API (this may take a few minutes for large models)..."
-  TIMEOUT=180
+  # Wait for vLLM to be ready
+  echo "Waiting for vLLM API (downloading model and loading into GPU memory)..."
+  TIMEOUT=900  # 15 minutes - for large model downloads
   ELAPSED=0
   while [ $ELAPSED -lt $TIMEOUT ]; do
     if curl -sf http://localhost:8000/v1/models > /dev/null 2>&1; then

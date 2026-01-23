@@ -5,12 +5,22 @@ const VLLM_API = 'http://localhost:8000';
 const MODELS_CONFIG = './models.json';
 const MAX_HISTORY_LENGTH = 50;
 
+// SVG Avatar Icons
+const USER_AVATAR = `<svg viewBox="0 0 24 24" fill="currentColor">
+  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+</svg>`;
+
+const AI_AVATAR = `<svg viewBox="0 0 24 24" fill="currentColor">
+  <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/>
+</svg>`;
+
 // State
 let currentModel = null;
 let conversationHistory = [];
 let isStreaming = false;
 let currentConversationId = null;
 let conversations = [];
+let sidebarOpen = true;
 
 // Trim conversation history to prevent unbounded memory growth
 function trimHistory() {
@@ -35,17 +45,50 @@ const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
 
 // Conversation sidebar elements
+const sidebar = document.getElementById('sidebar');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebarClose = document.getElementById('sidebar-close');
 const conversationList = document.getElementById('conversation-list');
 const newConversationBtn = document.getElementById('new-conversation-btn');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+  initSidebar();
   await loadModelConfig();
   await checkConnection();
   await loadConversations();
   setupEventListeners();
   autoResizeTextarea();
 });
+
+// Initialize sidebar state
+function initSidebar() {
+  const savedState = localStorage.getItem('sidebarOpen');
+
+  // Default to closed, use saved state if available
+  if (savedState !== null) {
+    sidebarOpen = savedState === 'true';
+  } else {
+    sidebarOpen = false;
+  }
+
+  updateSidebarState();
+}
+
+// Toggle sidebar
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  updateSidebarState();
+  localStorage.setItem('sidebarOpen', sidebarOpen);
+}
+
+// Update sidebar visual state
+function updateSidebarState() {
+  const isMobile = window.innerWidth < 768;
+  sidebar.classList.toggle('collapsed', !sidebarOpen);
+  sidebarBackdrop.classList.toggle('visible', sidebarOpen && isMobile);
+}
 
 // Load model configuration from models.json
 async function loadModelConfig() {
@@ -99,6 +142,7 @@ async function checkConnection() {
 function setStatus(state, text) {
   statusDot.className = `status-dot ${state}`;
   statusText.textContent = text;
+  document.getElementById('status').title = text;
 }
 
 // ==========================================
@@ -269,6 +313,30 @@ function renderMessages() {
 
 // Setup event listeners
 function setupEventListeners() {
+  // Sidebar toggle (open)
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', toggleSidebar);
+  }
+
+  // Sidebar close button
+  if (sidebarClose) {
+    sidebarClose.addEventListener('click', toggleSidebar);
+  }
+
+  // Sidebar backdrop click (close on mobile)
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', () => {
+      sidebarOpen = false;
+      updateSidebarState();
+      localStorage.setItem('sidebarOpen', sidebarOpen);
+    });
+  }
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    updateSidebarState();
+  });
+
   // New conversation button
   if (newConversationBtn) {
     newConversationBtn.addEventListener('click', async () => {
@@ -325,7 +393,7 @@ async function sendMessage() {
   // Show loading state
   isStreaming = true;
   sendBtn.disabled = true;
-  sendBtn.querySelector('.btn-text').classList.add('hidden');
+  sendBtn.querySelector('.send-icon').classList.add('hidden');
   sendBtn.querySelector('.btn-loading').classList.remove('hidden');
 
   // Create assistant message placeholder
@@ -400,7 +468,7 @@ async function sendMessage() {
   } finally {
     isStreaming = false;
     sendBtn.disabled = false;
-    sendBtn.querySelector('.btn-text').classList.remove('hidden');
+    sendBtn.querySelector('.send-icon').classList.remove('hidden');
     sendBtn.querySelector('.btn-loading').classList.add('hidden');
   }
 }
@@ -409,8 +477,9 @@ async function sendMessage() {
 function addMessage(role, content) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
+  const avatar = role === 'user' ? USER_AVATAR : AI_AVATAR;
   div.innerHTML = `
-    <div class="message-avatar">${role === 'user' ? 'You' : 'AI'}</div>
+    <div class="message-avatar">${avatar}</div>
     <div class="message-content">${content ? formatMarkdown(content) : '<span class="typing">...</span>'}</div>
   `;
   messagesDiv.appendChild(div);

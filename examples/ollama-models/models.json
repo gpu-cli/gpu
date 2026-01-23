@@ -1,6 +1,6 @@
 {
   "models": [
-    "llama3.2:3b"
+    "glm-4.7-flash"
   ],
-  "default": "llama3.2:3b"
+  "default": "glm-4.7-flash"
 }
