@@ -139,6 +139,26 @@ html, body {
   text-decoration: underline;
 }
 
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 1.25rem;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--border-color);
+  color: var(--accent-green);
+}
+
 .conversation-list {
   flex: 1;
   overflow-y: auto;
@@ -286,7 +306,7 @@ html, body {
   gap: 1rem;
 }
 
-/* Model Selector */
+/* Model Selector (Ollama-specific) */
 .model-selector {
   display: flex;
   align-items: center;
@@ -294,7 +314,8 @@ html, body {
 }
 
 .model-selector select {
-  padding: 0.5rem 0.75rem;
+  height: 36px;
+  padding: 0 2rem 0 0.75rem;
   background: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -302,6 +323,11 @@ html, body {
   font-size: 0.875rem;
   min-width: 180px;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
 }
 
 .model-selector select:focus {
@@ -645,27 +671,11 @@ html, body {
   background: var(--border-color);
 }
 
-.btn-icon {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  font-size: 1.25rem;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-}
-
-.btn-icon:hover:not(:disabled) {
-  background: var(--border-color);
-  color: var(--accent-green);
-}
-
 .hidden {
   display: none !important;
 }
 
-/* Modal */
+/* Modal (Ollama-specific) */
 .modal {
   position: fixed;
   inset: 0;
@@ -733,7 +743,7 @@ html, body {
   gap: 0.75rem;
 }
 
-/* Progress Bar */
+/* Progress Bar (Ollama-specific) */
 .pull-progress {
   margin-top: 1rem;
 }

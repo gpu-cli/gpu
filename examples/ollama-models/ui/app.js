@@ -3,7 +3,7 @@
 
 const OLLAMA_API = 'http://localhost:11434';
 const MODELS_CONFIG = './models.json';
-const MAX_HISTORY_LENGTH = 50;  // Limit conversation history to prevent memory issues
+const MAX_HISTORY_LENGTH = 50;
 
 // SVG Avatar Icons
 const USER_AVATAR = `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -25,7 +25,6 @@ let sidebarOpen = true;
 // Trim conversation history to prevent unbounded memory growth
 function trimHistory() {
   if (conversationHistory.length > MAX_HISTORY_LENGTH) {
-    // Keep system message if present, then most recent messages
     const hasSystem = conversationHistory[0]?.role === 'system';
     const startIndex = hasSystem ? 1 : 0;
     const keepCount = MAX_HISTORY_LENGTH - startIndex;
@@ -512,7 +511,7 @@ async function sendMessage() {
   const contentDiv = assistantDiv.querySelector('.message-content');
 
   try {
-    // Stream response
+    // Stream response using Ollama API
     const response = await fetch(`${OLLAMA_API}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -523,7 +522,10 @@ async function sendMessage() {
       })
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
