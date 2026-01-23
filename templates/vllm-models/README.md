@@ -5,7 +5,7 @@ Run Open Source LLMs on remote GPUs with vLLM's high-performance inference engin
 ## Quick Start
 
 ```bash
-cd examples/vllm-models
+cd templates/vllm-models
 
 # (Optional) Edit models.json to configure which model to run
 

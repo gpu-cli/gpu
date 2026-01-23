@@ -5,7 +5,7 @@ Run Open Source LLMs on remote GPUs with Ollama. Includes a lightweight Web UI a
 ## Quick Start
 
 ```bash
-cd examples/ollama-models
+cd templates/ollama-models
 
 # (Optional) Edit models.json to configure which models to pre-pull
 

@@ -18,7 +18,7 @@ venv/
 *.swp
 
 # Documentation
-examples/CLI_TEMPLATES_GUIDE.md
+templates/CLI_TEMPLATES_GUIDE.md
 
 # GPU CLI internal state
 **/pods/
