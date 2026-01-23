@@ -21,10 +21,10 @@
   // GPU selection - LLMs benefit from high VRAM
   // Priority order: try first, fall back to next
   "gpu_types": [
-    { "type": "RTX 4090" },           // 24GB - great for 7B-13B models
-    { "type": "A40" },                 // 48GB - good for 30B models
-    { "type": "L40S" },                // 48GB - newer, good availability
-    { "type": "A100 PCIe 80GB" }       // 80GB - for 70B+ models
+    { "type": "NVIDIA GeForce RTX 4090" },  // 24GB - great for 7B-13B models
+    { "type": "NVIDIA A40" },                // 48GB - good for 30B models
+    { "type": "NVIDIA L40S" },               // 48GB - newer, good availability
+    { "type": "NVIDIA A100 80GB PCIe" }      // 80GB - for 70B+ models
   ],
   "min_vram": 16,
   "max_price": 1.50,  // Max $/hr - enables auto-fallback to available GPUs within budget

@@ -23,8 +23,7 @@
   "gpu_types": [
     { "type": "NVIDIA A40" },
     { "type": "NVIDIA L40S" },
-    { "type": "NVIDIA A100 80GB PCIe" },
-    { "type": "NVIDIA A100-SXM4-80GB" }
+    { "type": "NVIDIA A100 80GB PCIe" }
   ],
   "min_vram": 48,
 
