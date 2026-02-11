@@ -2,7 +2,8 @@
 """
 Start ComfyUI server.
 
-Run setup.py first to install ComfyUI and download models.
+Run install_comfyui.py first to install ComfyUI and download models,
+or use 'gpu use .' which handles setup automatically via startup.sh.
 """
 
 import subprocess
@@ -21,15 +22,15 @@ def check_setup() -> bool:
         print("Error: ComfyUI not installed.")
         print(f"Expected: {main_py}")
         print()
-        print("Please run setup first:")
-        print("  gpu run python setup.py")
+        print("Run 'gpu use .' to start the automated setup,")
+        print("or run manually: gpu run python install_comfyui.py")
         return False
 
     models_dir = COMFYUI_DIR / "models" / "diffusion_models"
     if not models_dir.exists() or not any(models_dir.glob("*.safetensors")):
         print("Error: No models found in ComfyUI/models/diffusion_models/")
-        print("Please run setup first:")
-        print("  gpu run python setup.py")
+        print("Run 'gpu use .' to start the automated setup,")
+        print("or run manually: gpu run python install_comfyui.py")
         return False
 
     return True

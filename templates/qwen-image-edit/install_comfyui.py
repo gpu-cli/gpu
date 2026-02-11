@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import requests
-from tqdm import tqdm
+from huggingface_hub import hf_hub_download
 
 
 def log(msg: str) -> None:
@@ -130,10 +130,17 @@ def extract_models_from_workflow(workflow: dict[str, Any]) -> dict[str, list[str
 
 
 def clone_comfyui() -> None:
-    """Clone ComfyUI repository if not exists."""
-    if COMFYUI_DIR.exists():
+    """Clone ComfyUI repository if not exists (or if previous clone is incomplete)."""
+    main_py = COMFYUI_DIR / "main.py"
+    if main_py.exists():
         log("ComfyUI already cloned, skipping...")
         return
+
+    # Remove incomplete clone if present
+    if COMFYUI_DIR.exists():
+        log("Removing incomplete ComfyUI clone...")
+        import shutil
+        shutil.rmtree(COMFYUI_DIR)
 
     log("Cloning ComfyUI...")
     subprocess.run(
@@ -185,7 +192,7 @@ def create_model_directories() -> None:
 
 def download_model(filename: str, target_dir: Path) -> bool:
     """
-    Download a model file using huggingface-cli.
+    Download a model file using huggingface_hub Python API.
 
     Returns True if successful, False otherwise.
     """
@@ -206,31 +213,21 @@ def download_model(filename: str, target_dir: Path) -> bool:
     log(f"    From: {repo_id}")
 
     try:
-        # Use huggingface-cli for reliable downloads with progress
-        result = subprocess.run(
-            [
-                "huggingface-cli",
-                "download",
-                repo_id,
-                file_path,
-                "--local-dir",
-                str(target_dir.parent),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
+        downloaded_path = hf_hub_download(
+            repo_id=repo_id,
+            filename=file_path,
+            local_dir=str(target_dir.parent),
         )
 
-        # Move from split_files subdirectory to target directory
-        downloaded_path = target_dir.parent / file_path
-        if downloaded_path.exists() and downloaded_path != target_path:
-            downloaded_path.rename(target_path)
+        # Move from subdirectory to target directory if needed
+        downloaded = Path(downloaded_path)
+        if downloaded.exists() and downloaded != target_path:
+            downloaded.rename(target_path)
 
         # Clean up split_files directory if empty
         split_files_dir = target_dir.parent / "split_files"
         if split_files_dir.exists():
             try:
-                # Remove empty directories
                 for subdir in split_files_dir.iterdir():
                     if subdir.is_dir() and not any(subdir.iterdir()):
                         subdir.rmdir()
@@ -241,8 +238,8 @@ def download_model(filename: str, target_dir: Path) -> bool:
 
         return target_path.exists()
 
-    except subprocess.CalledProcessError as e:
-        log(f"    Error downloading: {e.stderr}")
+    except Exception as e:
+        log(f"    Error downloading: {e}")
         return False
 
 
@@ -376,11 +373,7 @@ def main() -> None:
     print_step(7, total_steps, "Validating setup")
     if validate_setup(required_models):
         log("\nSetup complete!")
-        log("\nNext steps:")
-        log("  1. Run ComfyUI:")
-        log("     gpu run --publish 8188:8188 python run.py")
-        log("  2. Open the URL shown in terminal")
-        log(f"  3. Load workflow from: Workflows > {workflow_name}")
+        log(f"  Workflow: {workflow_name}")
     else:
         log("\nSetup completed with warnings. Some models may need manual download.")
         sys.exit(1)

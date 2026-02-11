@@ -4,6 +4,13 @@
   // ComfyUI with workflow preloading - specify any ComfyUI workflow URL
   "project_id": "qwen-image-edit",
   "provider": "runpod",
+
+  "template": {
+    "name": "ComfyUI + Qwen Image Edit",
+    "description": "ComfyUI with workflow preloading - downloads workflow and required models automatically",
+    "author": "gpu-cli"
+  },
+
   "gpu_types": [
     { "type": "NVIDIA GeForce RTX 4090" },
     { "type": "NVIDIA L40S" },
@@ -13,7 +20,19 @@
   "encryption": false,
   "min_vram": 24,
   "workspace_size_gb": 150,
+
+  // Port forwarding for ComfyUI web UI
+  "ports": [8188],
+
+  // Startup launches setup + ComfyUI server
+  "startup": "bash ./startup.sh",
+
+  // Sync generated images back to local machine
   "outputs": ["ComfyUI/output/", "ComfyUI/user/"],
+
+  // No readiness hook - setup downloads ~26GB of models (15-20 min)
+  // which outlasts any reasonable retry count. startup.sh handles
+  // readiness internally with its own wait loop.
 
   // Environment setup - runs during pod provisioning
   "environment": {
@@ -24,7 +43,7 @@
       "steps": [
         // Upgrade PyTorch (ComfyUI requires 2.4+ for torch.library.custom_op)
         {
-          "run": "pip install torch>=2.4.0 torchvision --index-url https://download.pytorch.org/whl/cu121 -q",
+          "run": "pip install 'torch>=2.4.0' torchvision --index-url https://download.pytorch.org/whl/cu121 -q",
           "only_once": true,
           "timeout_sec": 600
         },
@@ -37,12 +56,6 @@
     }
   },
 
-   // Keep pod alive for 60 min after idle (model loading takes time)
-   "keep_alive_minutes": 60,
-
-  "template": {
-    "name": "ComfyUI + Qwen Image Edit",
-    "description": "ComfyUI with workflow preloading - downloads workflow and required models automatically",
-    "author": "gpu-cli"
-  }
+  // Keep pod alive for 60 min after idle (model loading takes time)
+  "keep_alive_minutes": 60
 }

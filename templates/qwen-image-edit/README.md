@@ -5,14 +5,11 @@ GPU CLI template for running ComfyUI with workflow preloading. Specify any Comfy
 ## Quick Start
 
 ```bash
-# 1. Setup (downloads ComfyUI, models, and workflow - ~15-20 min)
-gpu run python setup.py
-
-# 2. Run ComfyUI server
-gpu run --publish 8188:8188 python run.py
+# Launch ComfyUI (setup runs automatically on first start)
+gpu use .
 ```
 
-Open the URL shown in terminal to access ComfyUI.
+Open `http://localhost:8188` to access ComfyUI once the service is ready.
 
 ## Hardware Requirements
 
@@ -81,9 +78,9 @@ The default workflow uses [Qwen-Image-Edit](https://huggingface.co/Qwen/Qwen-Ima
 ## Troubleshooting
 
 ### "Model not found" error
-Run setup again to re-download models:
+Re-run the template to re-download models:
 ```bash
-gpu run python setup.py
+gpu use .
 ```
 
 ### Out of memory (OOM)
@@ -104,9 +101,10 @@ Check that your workflow URL returns valid JSON. Test by opening the URL in a br
 ## Files
 
 - `gpu.jsonc` - GPU CLI configuration with workflow URL
-- `setup.py` - Downloads ComfyUI, models, and workflow
-- `run.py` - Starts the ComfyUI server
-- `sample-image.jpg` - Test image for editing workflows
+- `startup.sh` - Startup script (runs setup + starts ComfyUI)
+- `install_comfyui.py` - Downloads ComfyUI, models, and workflow
+- `run.py` - Starts the ComfyUI server (for manual use)
+- `sample-image.png` - Test image for editing workflows
 
 ## Output Syncing
 
