@@ -25,6 +25,5 @@
     "runpod",
     "mac"
   ],
-  "skills": "./skills/",
-  "commands": "./commands/"
+  "skills": "./skills/"
 }
