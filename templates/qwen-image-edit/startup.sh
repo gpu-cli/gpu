@@ -3,6 +3,9 @@
 # Runs setup (idempotently) and starts ComfyUI server
 set -e
 
+# Force unbuffered output from all Python processes
+export PYTHONUNBUFFERED=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
@@ -36,6 +39,17 @@ echo ""
 # Check if ComfyUI is already running (from previous job on same pod)
 if curl -sf http://localhost:8188/system_stats > /dev/null 2>&1; then
   echo "ComfyUI is already running (reusing existing server)"
+  echo ""
+  echo "========================================"
+  echo "   COMFYUI + QWEN IMAGE EDIT READY"
+  echo "========================================"
+  echo ""
+  echo "  ComfyUI:  http://localhost:8188"
+  echo ""
+  echo "  Your workflow is pre-loaded in:"
+  echo "    Workflows menu > image_qwen_image_edit"
+  echo ""
+  echo "========================================"
   COMFYUI_PID=""
   # Keep the script running to maintain the job
   while curl -sf http://localhost:8188/system_stats > /dev/null 2>&1; do

@@ -92,5 +92,50 @@
       "help": "Get your token at https://huggingface.co/settings/tokens",
       "required": false
     }
-  ]
+  ],
+
+  // ==========================================================================
+  // Serverless Deployment
+  //
+  // When you're ready to scale from `gpu run` to a serverless API:
+  //   gpu serverless deploy
+  //
+  // This uses RunPod's official vLLM worker template, which exposes the
+  // same OpenAI-compatible API you've been using locally — just now it
+  // auto-scales with traffic and scales to zero when idle.
+  // ==========================================================================
+  "serverless": {
+    "template": "vllm",
+
+    "scaling": {
+      "min_workers": 0,
+      "max_workers": 3,
+      "idle_timeout": 5
+    },
+
+    "volume": {
+      "name": "vllm-models-cache",
+      "size_gb": 100,
+      "mount_path": "/workspace"
+    },
+
+    "prewarm": {
+      "enabled": true,
+      "mode": "cpu",
+      "models": [
+        "Qwen/Qwen2.5-14B-Instruct"
+      ]
+    },
+
+    "runpod": {
+      "ports": ["8000/http"],
+      "env": {
+        "MODEL_NAME": "Qwen/Qwen2.5-14B-Instruct"
+      },
+      "scaler_type": "queue_delay",
+      "scaler_value": 4,
+      "flashboot": true,
+      "execution_timeout_ms": 600000
+    }
+  }
 }

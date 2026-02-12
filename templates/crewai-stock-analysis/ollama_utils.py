@@ -2,6 +2,7 @@
 import subprocess
 import sys
 import time
+
 import requests
 
 
@@ -24,7 +25,7 @@ def get_vram_gb() -> int:
         gb = mib // 1024
         return gb
     except (subprocess.SubprocessError, FileNotFoundError, ValueError, IndexError) as e:
-        log(f"   ⚠️  Could not detect VRAM: {e}")
+        log(f"   Warning: Could not detect VRAM: {e}")
         return 24  # Default assumption
 
 
@@ -44,10 +45,10 @@ def select_model(vram_gb: int) -> str:
     elif vram_gb >= 16:
         return "qwen2.5:14b"  # 9GB model, good balance
     else:
-        return "qwen2.5:7b"   # 4.5GB model, basic capability
+        return "qwen2.5:7b"  # 4.5GB model, basic capability
 
 
-def wait_for_ollama(timeout: int = 30) -> bool:
+def wait_for_ollama(timeout: int = 60) -> bool:
     """Wait for Ollama server to be ready"""
     start = time.time()
     while time.time() - start < timeout:
@@ -62,28 +63,28 @@ def wait_for_ollama(timeout: int = 30) -> bool:
 
 
 def ensure_ollama_running(model: str) -> str:
-    """Start Ollama server and pull model if needed"""
-    # Check if server is already running
+    """Verify Ollama server is running and pull model if needed.
+
+    NOTE: Assumes Ollama server is already started by startup.sh.
+    This function verifies it's running and pulls the model.
+    """
+    # Check if server is running (should be - started by startup.sh)
     try:
         requests.get("http://localhost:11434/api/tags", timeout=2)
-        log("   ✓ Ollama server already running")
+        log("   Ollama server is running")
     except requests.exceptions.RequestException:
-        log("   → Starting Ollama server...")
-        subprocess.Popen(
-            ["ollama", "serve"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        if not wait_for_ollama():
-            log("   ❌ Failed to start Ollama server")
-            raise RuntimeError("Failed to start Ollama server")
-        log("   ✓ Ollama server started")
+        log("   Warning: Ollama server not detected, waiting...")
+        if not wait_for_ollama(timeout=60):
+            log("   Error: Ollama server not running")
+            raise RuntimeError(
+                "Ollama server is not running. It should be started by startup.sh."
+            )
+        log("   Ollama server is now running")
 
-    # Pull model - this streams progress automatically
-    log(f"   → Downloading model: {model}")
+    # Pull model - runs in foreground with streaming progress to keep SSH alive
+    log(f"   Downloading model: {model}")
     log("     (This may take 5-10 minutes on first run...)")
 
-    # Run with inherited stdout/stderr so progress shows
     result = subprocess.run(
         ["ollama", "pull", model],
         stdout=sys.stdout,
@@ -91,9 +92,8 @@ def ensure_ollama_running(model: str) -> str:
     )
 
     if result.returncode != 0:
-        log(f"   ❌ Failed to pull model {model}")
+        log(f"   Error: Failed to pull model {model}")
         raise RuntimeError(f"Failed to pull model {model}")
 
-    log(f"   ✓ Model {model} ready")
-
+    log(f"   Model {model} ready")
     return f"ollama/{model}"

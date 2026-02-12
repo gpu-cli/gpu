@@ -11,43 +11,29 @@ Multi-agent AI stock analysis powered by local LLMs on remote GPUs.
 
 ## Quick Start
 
-### Step 1: Setup (one-time)
+```bash
+gpu use .
+```
 
-Initialize the Ollama server and download the model:
+This single command:
+1. Provisions a GPU pod with an NVIDIA RTX 4090/A40/A6000 (24-48GB)
+2. Installs Ollama and downloads the appropriate model (first run only)
+3. Launches the web API server for stock analysis
+
+Once ready, analyze stocks via the API:
 
 ```bash
-gpu run python setup.py
+# Analyze a stock (streams progress in real-time)
+curl http://localhost:8501/analyze/NVDA
+
+# List completed reports
+curl http://localhost:8501/reports
+
+# View a specific report
+curl http://localhost:8501/reports/NVDA
 ```
 
-This provisions a GPU pod, installs Ollama, and downloads the appropriate model based on available VRAM. Takes 5-10 minutes on first run.
-
-### Step 2: Run Queries
-
-**Interactive mode** - analyze multiple stocks in one session:
-
-```bash
-gpu run python main.py
-```
-
-You'll see an interactive prompt:
-```
-============================================================
-CrewAI Stock Analysis - Interactive Mode
-============================================================
-Enter stock tickers to analyze (e.g., NVDA, AAPL, TSLA)
-Type 'quit' or 'exit' to stop
-============================================================
-
-Ticker> NVDA
-... analysis runs ...
-
-Ticker> AAPL
-... analysis runs ...
-
-Ticker> quit
-```
-
-**Single query mode** - analyze one stock and exit:
+**Single query mode** - analyze one stock via CLI:
 
 ```bash
 gpu run python main.py NVDA
@@ -55,24 +41,31 @@ gpu run python main.py NVDA
 
 ## What Happens
 
-### During Setup (`setup.py`)
+### During Setup (automatic on first start)
 
-1. GPU CLI provisions a pod with an NVIDIA A40/A6000 (48GB) or RTX 4090 (24GB)
+1. GPU CLI provisions a pod with an NVIDIA RTX 4090/A40/A6000 (24-48GB)
 2. Ollama installs automatically during provisioning
 3. The appropriate model downloads based on available VRAM:
    - 48GB+ VRAM: Qwen 2.5 32B (excellent reasoning)
    - 24GB VRAM: Qwen 2.5 14B (good balance of speed/quality)
 4. Configuration is saved for subsequent runs
 
-### During Analysis (`main.py`)
+### During Analysis
 
-1. Connects to the running pod with Ollama already configured
-2. Three AI agents collaborate to analyze the stock:
+1. Three AI agents collaborate to analyze the stock:
    - **Research Analyst**: Gathers news, market data, and company info
    - **Financial Analyst**: Analyzes valuation, growth trends, and financials
    - **Investment Advisor**: Synthesizes everything into a recommendation
-3. The final report syncs back to your local `reports/` folder
-4. In interactive mode, you can analyze multiple stocks without restarting
+2. The final report syncs back to your local `reports/` folder
+
+## Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check (used by readiness hook) |
+| `/analyze/<ticker>` | GET | Run analysis (streaming text response) |
+| `/reports` | GET | List completed reports |
+| `/reports/<ticker>` | GET | Get a specific report |
 
 ## Output
 
@@ -92,10 +85,11 @@ The report includes:
 
 | File | Description |
 |------|-------------|
-| `gpu.jsonc` | GPU CLI configuration (GPU types, outputs, environment) |
-| `pyproject.toml` | Python dependencies |
-| `setup.py` | One-time setup - initializes Ollama and downloads model |
-| `main.py` | Interactive query interface for stock analysis |
+| `gpu.jsonc` | GPU CLI configuration (GPU types, ports, readiness hook, environment) |
+| `startup.sh` | Startup script - starts Ollama, downloads model, launches web server |
+| `web_server.py` | Flask REST API wrapping CrewAI analysis |
+| `init_ollama.py` | Idempotent Ollama setup - verifies server and downloads model |
+| `main.py` | CLI mode - analyze a single stock via `gpu run` |
 | `crew.py` | CrewAI crew definition with agents and tasks |
 | `ollama_utils.py` | Ollama server management utilities |
 | `config/agents.yaml` | Agent role definitions |
@@ -141,18 +135,16 @@ First run takes longer due to model download (~10-20GB).
 
 ## Troubleshooting
 
-### "Run 'gpu run python setup.py' first to initialize"
+### "Model not configured" from health endpoint
 
-You need to run setup before running queries:
-```bash
-gpu run python setup.py
-```
+The Ollama server is still initializing and downloading the model. Wait for the readiness hook to pass - you'll see "Service Ready" in the terminal.
 
 ### "Ollama server failed to start"
 
-The Ollama installation may have failed. Try running setup again:
+The Ollama installation may have failed. Stop the pod and start fresh:
 ```bash
-gpu run python setup.py
+gpu stop
+gpu use .
 ```
 
 ### "Model download failed"
@@ -174,10 +166,3 @@ DuckDuckGo may rate-limit requests. The analysis will continue with available da
 - Pod cost: ~$0.50-1.00 per analysis (15 min on A40)
 - LLM inference: $0 (runs locally)
 - Compare to: $5-10+ for equivalent GPT-4 API usage
-
-## Next Steps
-
-- Try different stocks and compare analyses
-- Modify agents to focus on specific sectors (tech, healthcare, etc.)
-- Add custom tools for specialized data sources
-- Integrate with portfolio management workflows

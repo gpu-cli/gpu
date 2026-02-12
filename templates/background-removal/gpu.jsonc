@@ -10,18 +10,42 @@
   "encryption": false,
   "min_vram": 24,
   "workspace_size_gb": 60,
+
+  // Port forwarding for InvokeAI web UI
+  "ports": [9090],
+
+  // Startup launches setup + InvokeAI server
+  "startup": "bash ./startup.sh",
+
+  // Sync generated images back to local machine
   "outputs": ["invokeai/outputs/"],
+
+  // Readiness hook - wait for InvokeAI API to be ready before marking service as ready
+  // InvokeAI + BiRefNet model loading can take several minutes on first run
+  "hooks": {
+    "readiness": {
+      "type": "command",
+      "name": "invokeai-ready",
+      "run": ["curl", "-sf", "http://localhost:9090/api/v1/app/version"],
+      "retry_count": 120,
+      "retry_delay_secs": 5,
+      "timeout_secs": 10
+    }
+  },
 
   // Environment setup - runs during pod provisioning
   "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+
     "system": {
       "apt": [{ "name": "git" }]
     },
     "shell": {
       "steps": [
         // Install InvokeAI with xformers + BiRefNet dependencies
+        // NOTE: Do NOT use -q flag - output keeps SSH connection alive during long installs
         {
-          "run": "pip install invokeai[xformers] timm kornia -q",
+          "run": "pip install 'invokeai[xformers]' timm kornia",
           "only_once": true,
           "timeout_sec": 600
         }

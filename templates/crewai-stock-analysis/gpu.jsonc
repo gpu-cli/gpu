@@ -12,23 +12,50 @@
 
   // GPU configuration - 24GB+ for running 14B models
   "gpu_types": [
+    { "type": "NVIDIA GeForce RTX 4090" },
     { "type": "NVIDIA A40" },
-    { "type": "NVIDIA RTX A6000" },
-    { "type": "NVIDIA GeForce RTX 4090" }
+    { "type": "NVIDIA RTX A6000" }
   ],
   "min_vram": 24,
   "max_price": 1.20,
 
   // Storage and lifecycle
   "workspace_size_gb": 30,
-  "keep_alive_minutes": 15,
+  "keep_alive_minutes": 30,
   "encryption": false,
 
-  // Sync reports and model config back to local
-  "outputs": ["reports/", ".ollama_model"],
+  // Port forwarding for Ollama API + web server
+  "ports": [11434, 8501],
 
-  // Environment: install dependencies
+  // Sync reports back to local machine
+  "outputs": ["reports/"],
+
+  // Startup launches Ollama + web API server
+  "startup": "bash ./startup.sh",
+
+  // Readiness hook - wait for web server to be ready
+  "hooks": {
+    "readiness": {
+      "type": "command",
+      "name": "crewai-ready",
+      "run": ["curl", "-sf", "http://localhost:8501/health"],
+      "retry_count": 60,
+      "retry_delay_secs": 3,
+      "timeout_secs": 10
+    }
+  },
+
+  // Environment: install dependencies during Docker build
   "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+
+    "system": {
+      "apt": [
+        { "name": "curl" },
+        { "name": "jq" }
+      ]
+    },
+
     "shell": {
       "steps": [
         {
@@ -37,7 +64,7 @@
           "timeout_sec": 180
         },
         {
-          "run": "pip install 'crewai[tools]' 'litellm' 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0'",
+          "run": "pip install 'crewai[tools]' 'litellm' 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0' 'flask>=3.0.0'",
           "timeout_sec": 600
         }
       ]

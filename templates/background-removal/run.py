@@ -2,7 +2,8 @@
 """
 Start InvokeAI server with BiRefNet background removal.
 
-Run setup.py first to install InvokeAI and the BiRefNet node.
+Run install_invokeai.py first to install InvokeAI and the BiRefNet node.
+Typically called via startup.sh (gpu use .).
 """
 
 import os
@@ -20,13 +21,15 @@ def check_setup() -> bool:
     if not INVOKEAI_DIR.exists():
         print("Error: InvokeAI not installed.")
         print("Please run setup first:")
-        print("  gpu run python setup.py")
+        print("  gpu use .")
+        print("  (or: python install_invokeai.py)")
         return False
 
     if not BIREFNET_DIR.exists():
         print("Error: BiRefNet node not installed.")
         print("Please run setup first:")
-        print("  gpu run python setup.py")
+        print("  gpu use .")
+        print("  (or: python install_invokeai.py)")
         return False
 
     return True

@@ -5,11 +5,8 @@ GPU CLI template for InvokeAI with the BiRefNet background removal node and mode
 ## Quick Start
 
 ```bash
-# 1. Setup (~5-10 min, downloads InvokeAI + BiRefNet)
-gpu run python setup.py
-
-# 2. Run InvokeAI server
-gpu run --publish 9090:9090 python run.py
+# Start InvokeAI with BiRefNet (~5-10 min first run, downloads models)
+gpu use .
 ```
 
 Open the URL shown in terminal to access InvokeAI.
@@ -62,9 +59,10 @@ Setup downloads BiRefNet (~500MB) for background removal.
 
 ## Files
 
-- `gpu.jsonc` - GPU CLI configuration
-- `setup.py` - Downloads InvokeAI + BiRefNet node and model
-- `run.py` - Starts the InvokeAI server
+- `gpu.jsonc` - GPU CLI configuration (ports, startup, environment)
+- `startup.sh` - Startup script: installs deps, runs setup, starts InvokeAI server
+- `install_invokeai.py` - Idempotent setup: downloads InvokeAI + BiRefNet node and model
+- `run.py` - Standalone InvokeAI server launcher (used by startup.sh)
 
 ## Troubleshooting
 
@@ -77,7 +75,7 @@ You need to load an image first. Click the dark "Image" box in the BiRefNet node
 ### "Module not found" errors
 Run setup again:
 ```bash
-gpu run python setup.py
+gpu use .
 ```
 
 ### Out of memory
