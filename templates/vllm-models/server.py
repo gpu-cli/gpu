@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SQLite persistence server for Ollama chat conversations.
+"""SQLite persistence server for vLLM chat conversations.
 
 Provides REST API for conversation CRUD operations with SQLite backend.
 Serves static files from ui/ directory for the Web UI.

@@ -44,7 +44,7 @@ Edit `models.json` to specify which model to run:
 
 ```json
 {
-  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model": "Qwen/Qwen2.5-14B-Instruct",
   "vllm_args": {
     "gpu_memory_utilization": 0.9,
     "max_model_len": 32768,
@@ -101,7 +101,7 @@ curl http://localhost:8000/v1/models
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "model": "Qwen/Qwen2.5-14B-Instruct",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
@@ -112,7 +112,7 @@ curl http://localhost:8000/v1/chat/completions \
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "model": "Qwen/Qwen2.5-14B-Instruct",
     "messages": [{"role": "user", "content": "Write a haiku about GPUs"}],
     "stream": true
   }'
@@ -129,7 +129,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="Qwen/Qwen2.5-7B-Instruct",
+    model="Qwen/Qwen2.5-14B-Instruct",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
@@ -143,11 +143,52 @@ from langchain_openai import ChatOpenAI
 llm = ChatOpenAI(
     base_url="http://localhost:8000/v1",
     api_key="vllm",
-    model="Qwen/Qwen2.5-7B-Instruct"
+    model="Qwen/Qwen2.5-14B-Instruct"
 )
 
 response = llm.invoke("Hello!")
 print(response.content)
+```
+
+## Serverless Deployment
+
+Deploy as a serverless API endpoint that auto-scales and scales to zero:
+
+```bash
+gpu serverless deploy --gpu "NVIDIA GeForce RTX 4090"
+```
+
+This creates a RunPod Serverless endpoint using the official vLLM worker template.
+The endpoint exposes the same OpenAI-compatible API you've been using locally.
+
+Configuration is read from the `serverless` section in `gpu.jsonc` (scaling, volume, env vars).
+CLI flags override config values when provided.
+
+### Invoke the endpoint
+
+```bash
+curl -X POST "https://api.runpod.ai/v2/<endpoint-id>/runsync" \
+  -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": {
+      "openai_route": "/v1/chat/completions",
+      "openai_input": {
+        "model": "Qwen/Qwen2.5-14B-Instruct",
+        "messages": [{"role": "user", "content": "Hello!"}],
+        "max_tokens": 100
+      }
+    }
+  }'
+```
+
+### Manage the endpoint
+
+```bash
+gpu serverless status <endpoint-id>   # Check workers, queue, scaling
+gpu serverless list                    # List all endpoints
+gpu serverless warm <endpoint-id>      # Pre-warm a worker
+gpu serverless delete <id> --force     # Delete endpoint
 ```
 
 ## Changing Models
