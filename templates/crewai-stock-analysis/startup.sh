@@ -35,11 +35,22 @@ echo "=== CrewAI Stock Analysis ==="
 echo "Working directory: $SCRIPT_DIR"
 echo ""
 
-# Ensure dependencies are available
-# (env_spec shell steps may be skipped due to only_once markers from a prior pod session)
-# NOTE: Do NOT use -q flag - output keeps SSH connection alive during long installs
-echo "Installing dependencies..."
-pip install 'crewai[tools]' litellm 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0' 'flask>=3.0.0' 2>&1
+# Verify dependencies are available (installed by gpu.jsonc python.pip_global)
+echo "Checking dependencies..."
+python -c "import crewai; import litellm; import flask" 2>/dev/null || {
+    echo "Dependencies not found, installing..."
+    if command -v uv > /dev/null 2>&1; then
+        uv pip install --system 'crewai[tools]' litellm 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0' 'flask>=3.0.0' 2>&1
+    else
+        pip install --ignore-installed 'crewai[tools]' litellm 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0' 'flask>=3.0.0' 2>&1
+    fi
+}
+
+# Ensure Ollama is installed (defense-in-depth if env_spec shell step failed)
+command -v ollama > /dev/null 2>&1 || {
+    echo "Ollama not found, installing..."
+    curl -fsSL https://ollama.com/install.sh | sh
+}
 
 # Check if Ollama is already running (from previous job on same pod)
 if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then

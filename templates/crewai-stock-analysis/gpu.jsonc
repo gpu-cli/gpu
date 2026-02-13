@@ -25,7 +25,10 @@
   "encryption": false,
 
   // Port forwarding for Ollama API + web server
-  "ports": [11434, 8501],
+  "ports": [
+    { "port": 8501, "description": "api" },
+    { "port": 11434, "description": "ollama" }
+  ],
 
   // Sync reports back to local machine
   "outputs": ["reports/"],
@@ -52,21 +55,29 @@
     "system": {
       "apt": [
         { "name": "curl" },
-        { "name": "jq" }
+        { "name": "jq" },
+        { "name": "zstd" }
       ]
     },
 
     "shell": {
       "steps": [
         {
-          "run": "curl -fsSL https://ollama.com/install.sh | sh",
-          "only_once": true,
+          "run": "command -v ollama > /dev/null 2>&1 || curl -fsSL https://ollama.com/install.sh | sh",
           "timeout_sec": 180
-        },
-        {
-          "run": "pip install 'crewai[tools]' 'litellm' 'ddgs>=7.0.0' 'beautifulsoup4>=4.12.0' 'requests>=2.31.0' 'pyyaml>=6.0.0' 'flask>=3.0.0'",
-          "timeout_sec": 600
         }
+      ]
+    },
+
+    "python": {
+      "pip_global": [
+        { "name": "crewai[tools]" },
+        { "name": "litellm" },
+        { "name": "ddgs", "version": ">=7.0.0" },
+        { "name": "beautifulsoup4", "version": ">=4.12.0" },
+        { "name": "requests", "version": ">=2.31.0" },
+        { "name": "pyyaml", "version": ">=6.0.0" },
+        { "name": "flask", "version": ">=3.0.0" }
       ]
     }
   }
