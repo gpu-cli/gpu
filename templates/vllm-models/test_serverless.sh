@@ -57,15 +57,24 @@ info "2. Deploy"
 if [[ -z "$ENDPOINT_ID" ]]; then
     echo "  Deploying vLLM endpoint (this talks to RunPod API)..."
 
+    # Capture stderr separately to avoid mixing with JSON stdout
+    STDERR_FILE=$(mktemp)
     DEPLOY_OUTPUT=$($GPU_BIN serverless deploy \
         --template vllm \
-        --gpu "RTX 4090" \
         --min-workers 0 \
         --max-workers 1 \
         --idle-timeout 5 \
-        --json 2>&1) || { fail "Deploy command failed"; echo "$DEPLOY_OUTPUT"; }
+        --json 2>"$STDERR_FILE") || { fail "Deploy command failed"; cat "$STDERR_FILE" >&2; rm -f "$STDERR_FILE"; }
 
-    # Try to extract endpoint ID from JSON
+    if [[ -f "$STDERR_FILE" ]]; then
+        # Show stderr as info (progress messages)
+        while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "  $line"
+        done < "$STDERR_FILE"
+        rm -f "$STDERR_FILE"
+    fi
+
+    # Try to extract endpoint ID from JSON stdout
     ENDPOINT_ID=$(echo "$DEPLOY_OUTPUT" | python3 -c "
 import sys, json
 try:
@@ -136,59 +145,83 @@ if [[ -n "$ENDPOINT_ID" ]]; then
     if [[ -n "$RUNPOD_API_KEY" ]]; then
         echo "  Sending chat completion to endpoint..."
 
-        RESPONSE=$(curl -sS --max-time 120 \
-            -X POST "https://api.runpod.ai/v2/${ENDPOINT_ID}/runsync" \
+        # Use /openai/v1/chat/completions endpoint format (RunPod vLLM worker v2.12+)
+        # Model name must match MODEL_NAME env var in gpu.jsonc
+        RESPONSE=$(curl -sS --max-time 300 \
+            -X POST "https://api.runpod.ai/v2/${ENDPOINT_ID}/openai/v1/chat/completions" \
             -H "Authorization: Bearer ${RUNPOD_API_KEY}" \
             -H "Content-Type: application/json" \
             -d '{
-                "input": {
-                    "openai_route": "/v1/chat/completions",
-                    "openai_input": {
-                        "model": "Qwen/Qwen2.5-14B-Instruct",
-                        "messages": [
-                            {"role": "system", "content": "Reply in one sentence."},
-                            {"role": "user", "content": "What is serverless GPU computing?"}
-                        ],
-                        "max_tokens": 100,
-                        "temperature": 0.7
-                    }
-                }
+                "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+                "messages": [
+                    {"role": "system", "content": "Reply in one sentence."},
+                    {"role": "user", "content": "What is serverless GPU computing?"}
+                ],
+                "max_tokens": 100,
+                "temperature": 0.7
             }' 2>&1) || true
 
-        STATUS_CODE=$(echo "$RESPONSE" | python3 -c "
+        # Check if response is valid JSON
+        if echo "$RESPONSE" | python3 -m json.tool > /dev/null 2>&1; then
+            # Check for choices (direct OpenAI format) or status (RunPod wrapper)
+            HAS_CHOICES=$(echo "$RESPONSE" | python3 -c "
 import sys, json
 try:
-    print(json.load(sys.stdin).get('status', 'unknown'))
+    data = json.load(sys.stdin)
+    if 'choices' in data:
+        print('direct')
+    elif 'status' in data:
+        print(data['status'])
+    else:
+        print('unknown')
 except:
     print('parse_error')
 " 2>/dev/null || echo "parse_error")
 
-        case "$STATUS_CODE" in
-            COMPLETED)
-                pass "Invocation completed"
-                TEXT=$(echo "$RESPONSE" | python3 -c "
+            case "$HAS_CHOICES" in
+                direct)
+                    pass "Invocation completed (direct OpenAI response)"
+                    TEXT=$(echo "$RESPONSE" | python3 -c "
 import sys, json
 r = json.load(sys.stdin)
-choices = r.get('output', {}).get('choices', [])
+choices = r.get('choices', [])
 if choices:
     print(choices[0].get('message', {}).get('content', '(empty)'))
 else:
     print('(no choices)')
 " 2>/dev/null || echo "(parse error)")
-                echo -e "  ${GREEN}Response:${NC} $TEXT"
-                ;;
-            IN_QUEUE|IN_PROGRESS)
-                warn "Request queued/processing (cold start). Status: $STATUS_CODE"
-                ;;
-            FAILED)
-                fail "Invocation failed"
-                echo "$RESPONSE" | python3 -m json.tool 2>/dev/null | sed 's/^/  /' || echo "  $RESPONSE"
-                ;;
-            *)
-                warn "Unexpected status: $STATUS_CODE"
-                echo "$RESPONSE" | head -5 | sed 's/^/  /'
-                ;;
-        esac
+                    echo -e "  ${GREEN}Response:${NC} $TEXT"
+                    ;;
+                COMPLETED)
+                    pass "Invocation completed"
+                    TEXT=$(echo "$RESPONSE" | python3 -c "
+import sys, json
+r = json.load(sys.stdin)
+output = r.get('output', {})
+choices = output.get('choices', [])
+if choices:
+    print(choices[0].get('message', {}).get('content', '(empty)'))
+else:
+    print('(no choices)')
+" 2>/dev/null || echo "(parse error)")
+                    echo -e "  ${GREEN}Response:${NC} $TEXT"
+                    ;;
+                IN_QUEUE|IN_PROGRESS)
+                    warn "Request queued/processing (cold start). Status: $HAS_CHOICES"
+                    ;;
+                FAILED)
+                    fail "Invocation failed"
+                    echo "$RESPONSE" | python3 -m json.tool 2>/dev/null | sed 's/^/  /' || echo "  $RESPONSE"
+                    ;;
+                *)
+                    warn "Unexpected response format: $HAS_CHOICES"
+                    echo "$RESPONSE" | head -5 | sed 's/^/  /'
+                    ;;
+            esac
+        else
+            warn "Response is not valid JSON"
+            echo "$RESPONSE" | head -5 | sed 's/^/  /'
+        fi
     else
         warn "Skipping invoke — no RUNPOD_API_KEY found"
     fi

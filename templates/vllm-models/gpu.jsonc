@@ -104,7 +104,8 @@
   // ==========================================================================
   "serverless": {
     "template": "vllm",
-    "gpu_type": "NVIDIA GeForce RTX 4090",
+    "gpu_type": "NVIDIA L4",
+    "gpu_types": ["NVIDIA GeForce RTX 4090", "NVIDIA RTX A4000"],
 
     "scaling": {
       "min_workers": 0,
@@ -115,24 +116,33 @@
     "volume": {
       "name": "vllm-models-cache",
       "size_gb": 100,
-      "mount_path": "/workspace"
+      "mount_path": "/runpod-volume"
     },
 
     "prewarm": {
       "enabled": true,
       "mode": "cpu",
-      "models": ["Qwen/Qwen2.5-7B-Instruct"]
+      "models": ["TinyLlama/TinyLlama-1.1B-Chat-v1.0"]
     },
 
     "runpod": {
       "ports": ["8000/http"],
       "env": {
-        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct"
+        "MODEL_NAME": "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
       },
+      // NOTE: cached_model is stored in config but not yet sent to RunPod API.
+      // The endpoint create mutation doesn't support this field yet.
+      // Keeping it for future API support.
+      "cached_model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
       "scaler_type": "queue_delay",
       "scaler_value": 4,
       "flashboot": true,
-      "execution_timeout_ms": 600000
+      "execution_timeout_ms": 600000,
+      // Preferred datacenters for volume placement, ordered by GPU availability.
+      // Workers can spin up in any DC unless data_centers_required is true.
+      // US-IL-1: RTX 4090 High | US-TX-3: RTX 4090 | US-NC-1: RTX 4090 | US-CA-2: RTX 4090
+      "data_center_ids": ["US-IL-1", "US-TX-3", "US-NC-1", "US-CA-2", "EU-RO-1"],
+      "data_centers_required": false
     }
   }
 }
