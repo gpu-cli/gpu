@@ -122,18 +122,18 @@
     "prewarm": {
       "enabled": true,
       "mode": "cpu",
-      "models": ["TinyLlama/TinyLlama-1.1B-Chat-v1.0"]
+      "models": ["Qwen/Qwen2.5-7B-Instruct"]
     },
 
     "runpod": {
       "ports": ["8000/http"],
       "env": {
-        "MODEL_NAME": "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+        "MODEL_NAME": "Qwen/Qwen2.5-7B-Instruct"
       },
       // NOTE: cached_model is stored in config but not yet sent to RunPod API.
       // The endpoint create mutation doesn't support this field yet.
       // Keeping it for future API support.
-      "cached_model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "cached_model": "Qwen/Qwen2.5-7B-Instruct",
       "scaler_type": "queue_delay",
       "scaler_value": 4,
       "flashboot": true,
