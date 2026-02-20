@@ -14,6 +14,7 @@ gpu run python train.py   # remote GPU
 - **Cost-efficient** - Auto-stops pods when idle (save 60-98% on GPU costs)
 - **Multi-cloud** - RunPod, Vast.ai, local Docker
 - **Secure** - Zero-trust encryption on supported providers
+- **Teams** — Organizations with pooled sessions, sub-accounts, and CI/CD service tokens (Team & Enterprise)
 
 ## Quick Start
 
@@ -120,6 +121,22 @@ gpu stop
 gpu dashboard
 ```
 
+### Team Management
+
+```bash
+# Create an organization
+gpu org create "My Team"
+
+# Switch to org context
+gpu org switch my-team
+
+# Invite a teammate
+gpu org invite alice@example.com --role admin
+
+# Create a CI/CD service account
+gpu org service-account create --name "github-actions"
+```
+
 ## Configuration
 
 Create a `gpu.jsonc` in your project:
@@ -165,6 +182,7 @@ For faster startup and persistent model storage, use RunPod Network Volumes. See
 ## Documentation
 
 - [Network Volumes Guide](./docs/network-volumes.md) - Persistent storage for models
+- [Organizations Guide](https://gpu-cli.sh/docs/organizations) - Team billing, sub-accounts, and service tokens
 - [GPU CLI Docs](https://gpu-cli.sh/docs) - Full documentation
 
 ## License
