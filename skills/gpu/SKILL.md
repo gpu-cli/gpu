@@ -30,7 +30,6 @@ Config: !`ls gpu.jsonc 2>/dev/null || echo "No config"`
 | `gpu status` | Show pods, jobs, costs |
 | `gpu logs [-f]` | View/stream job output |
 | `gpu stop` | Stop pod immediately |
-| `gpu events` | Stream all activity |
 | `gpu inventory` | List GPUs with pricing |
 | `gpu dashboard` | Interactive TUI |
 
