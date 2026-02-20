@@ -66,6 +66,10 @@ Config: !`ls gpu.jsonc 2>/dev/null || echo "No config"`
 | 48GB | RTX A6000 | $0.80 | Large training |
 | 80GB | A100 PCIe | $1.79 | 70B LLMs, video |
 
+## Workflow
+
+`gpu run` works like local development — no need to `gpu stop` between commands. Just Ctrl+C (or let the command finish) and run `gpu run <next-command>`. The remote process is terminated and the pod is reused. Only use `gpu stop` when you're done and want to release the pod.
+
 ## Sync Behavior
 
 - **TO pod**: `.gitignore` controls (gitignored files don't sync)
