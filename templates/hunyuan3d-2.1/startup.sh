@@ -284,7 +284,93 @@ MOCK_EOF
 }
 
 # ==============================================================================
-# Step 5: Patch and launch the Gradio app
+# Step 5: Create bpy stub module
+#
+# mesh_utils.py does `import bpy` at the top level, which crashes the entire
+# texture pipeline import. bpy (Blender Python) has no pip wheels for headless
+# cloud images. However, gradio_app.py never actually calls the bpy-dependent
+# convert_obj_to_glb — it uses its own quick_convert_with_obj2gltf instead
+# (which calls create_glb_with_pbr_materials from convert_utils.py).
+#
+# So we create a stub bpy module that lets the import succeed. If anything
+# actually tries to call a Blender operation, it raises a clear error.
+# ==============================================================================
+create_bpy_stub() {
+    log "Creating bpy stub module (Blender Python not available on cloud)..."
+
+    cat > "${SPACE_DIR}/bpy.py" << 'BPY_STUB_EOF'
+"""
+Stub 'bpy' module for running Hunyuan3D-2.1 without Blender installed.
+
+The texture pipeline (mesh_utils.py) imports bpy at module level for
+convert_obj_to_glb(), but gradio_app.py uses its own GLB conversion
+path (create_glb_with_pbr_materials). This stub prevents the import
+crash while raising clear errors if Blender ops are actually called.
+"""
+import types
+import sys
+
+
+class _StubOps:
+    """Raises RuntimeError on any attribute access (Blender op call)."""
+    def __getattr__(self, name):
+        def _op(*args, **kwargs):
+            raise RuntimeError(
+                f"bpy.ops.{name} called but Blender (bpy) is not installed. "
+                "GLB conversion uses create_glb_with_pbr_materials instead."
+            )
+        return _op
+
+
+class _StubCollection:
+    """Minimal stub for bpy.data.scenes, bpy.data.objects, etc."""
+    def __getattr__(self, name):
+        return _StubCollection()
+    def __iter__(self):
+        return iter([])
+    def __contains__(self, item):
+        return False
+    def new(self, *args, **kwargs):
+        return _StubCollection()
+    def remove(self, *args, **kwargs):
+        pass
+
+
+class _StubContext:
+    """Minimal stub for bpy.context."""
+    window = _StubCollection()
+    scene = _StubCollection()
+    view_layer = _StubCollection()
+    selected_objects = []
+
+
+class _StubApp:
+    """Minimal stub for bpy.app."""
+    version = (4, 0, 0)
+
+
+# Module-level attributes
+ops = types.ModuleType("bpy.ops")
+ops.object = _StubOps()
+ops.mesh = _StubOps()
+ops.wm = _StubOps()
+ops.export_scene = _StubOps()
+
+data = _StubCollection()
+context = _StubContext()
+app = _StubApp()
+
+sys.modules["bpy"] = sys.modules[__name__]
+sys.modules["bpy.ops"] = ops
+
+print("[bpy-stub] bpy module stubbed (Blender not available; GLB conversion via create_glb_with_pbr_materials)")
+BPY_STUB_EOF
+
+    log "bpy stub created"
+}
+
+# ==============================================================================
+# Step 6: Patch and launch the Gradio app
 # ==============================================================================
 launch_app() {
     log "Preparing to launch Hunyuan3D-2.1 Gradio app..."
@@ -373,6 +459,7 @@ main() {
     install_space_deps
     compile_extensions
     create_spaces_mock
+    create_bpy_stub
     launch_app
 }
 

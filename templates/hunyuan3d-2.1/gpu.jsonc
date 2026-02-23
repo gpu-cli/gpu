@@ -78,6 +78,7 @@
         { "name": "cmake" },
         { "name": "ninja-build" },
         { "name": "curl" },
+        { "name": "python3-dev" },
         { "name": "libgl1-mesa-glx" },
         { "name": "libglib2.0-0" },
         { "name": "libgomp1" },
