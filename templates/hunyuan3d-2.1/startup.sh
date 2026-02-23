@@ -391,6 +391,30 @@ launch_app() {
     # Python path: Space root + subpackages
     export PYTHONPATH="${SPACE_DIR}:${SPACE_DIR}/hy3dshape:${SPACE_DIR}/hy3dpaint:${PYTHONPATH:-}"
 
+    # Fix diffusers custom pipeline resolution:
+    # The texture model uses custom_pipeline="hy3dpaint/hunyuanpaintpbr" which has a
+    # nested unet/ subpackage. Diffusers copies custom pipeline files to its modules
+    # cache at HF_MODULES_CACHE/diffusers_modules/local/ but only copies top-level
+    # .py files, missing the unet/ subdirectory. This causes:
+    #   ModuleNotFoundError: No module named 'diffusers_modules.local.modules'
+    #
+    # Fix: pre-populate the diffusers modules cache with the full pipeline directory
+    # (including unet/) so the imports resolve correctly.
+    export HF_MODULES_CACHE="${HF_HOME}/modules"
+    mkdir -p "${HF_MODULES_CACHE}"
+
+    CUSTOM_PIPE_SRC="${SPACE_DIR}/hy3dpaint/hunyuanpaintpbr"
+    CUSTOM_PIPE_DST="${HF_MODULES_CACHE}/diffusers_modules/local"
+    if [ -d "${CUSTOM_PIPE_SRC}" ] && [ ! -d "${CUSTOM_PIPE_DST}/unet" ]; then
+        log "Pre-populating diffusers custom pipeline cache..."
+        mkdir -p "${CUSTOM_PIPE_DST}"
+        cp -r "${CUSTOM_PIPE_SRC}"/* "${CUSTOM_PIPE_DST}/"
+        # Create __init__.py for diffusers_modules package if missing
+        touch "${HF_MODULES_CACHE}/diffusers_modules/__init__.py"
+        touch "${CUSTOM_PIPE_DST}/__init__.py"
+        log "Custom pipeline cached at ${CUSTOM_PIPE_DST}"
+    fi
+
     # Patch the entry point:
     # - Set ENV to non-"Huggingface" so it skips:
     #   * CUDA toolkit download (we have CUDA 12.4 devel)
