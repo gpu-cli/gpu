@@ -189,12 +189,30 @@ compile_extensions() {
         log "custom_rasterizer installed successfully"
     fi
 
-    # Compile DifferentiableRenderer (mesh painter for texture gen)
+    # Compile DifferentiableRenderer (mesh painter for texture inpainting)
+    # compile_mesh_painter.sh uses `python` (not python3) and `python3-config`
+    # Ensure both are available
     DR_DIR="${SPACE_DIR}/hy3dpaint/DifferentiableRenderer"
     if [ -d "${DR_DIR}" ] && [ -f "${DR_DIR}/compile_mesh_painter.sh" ]; then
         log "Compiling DifferentiableRenderer mesh painter..."
-        (cd "${DR_DIR}" && bash compile_mesh_painter.sh) || \
-            log "WARNING: DifferentiableRenderer compilation failed - texture gen may not work"
+        # Ensure `python` command exists (some images only have python3)
+        if ! command -v python &>/dev/null && command -v python3 &>/dev/null; then
+            ln -sf "$(which python3)" /usr/local/bin/python 2>/dev/null || true
+        fi
+        # Verify python3-config is available (from python3-dev package)
+        if ! command -v python3-config &>/dev/null; then
+            log "WARNING: python3-config not found. Install python3-dev. Skipping mesh painter compilation."
+        else
+            (cd "${DR_DIR}" && bash compile_mesh_painter.sh) || \
+                log "WARNING: DifferentiableRenderer compilation failed - texture inpainting may not work"
+            # Verify the compiled extension exists
+            SUFFIX=$(python3-config --extension-suffix 2>/dev/null || echo ".so")
+            if [ -f "${DR_DIR}/mesh_inpaint_processor${SUFFIX}" ]; then
+                log "mesh_inpaint_processor compiled successfully"
+            else
+                log "WARNING: mesh_inpaint_processor not found after compilation"
+            fi
+        fi
     else
         log "WARNING: DifferentiableRenderer not found at ${DR_DIR}"
     fi
