@@ -1,0 +1,18 @@
+# Hunyuan3D-2.1 GPU CLI Template - Base Dependencies
+#
+# These are installed during environment setup (gpu.jsonc shell step).
+# They provide the minimum needed for startup.sh to work (download + compile).
+#
+# The full ML stack (gradio, diffusers, trimesh, rembg, etc.) is installed by
+# startup.sh from the downloaded Space's own requirements.txt, which has exact
+# version pins. This avoids version churn and double-installs.
+#
+# NOTE: torch/torchvision/torchaudio are NOT listed - they come from the
+# RunPod base image (CUDA-native builds).
+
+# Required by startup.sh step 1 (download Space)
+huggingface_hub>=0.30.0
+
+# Required by startup.sh step 3 (compile CUDA extensions from source)
+ninja>=1.11.0
+pybind11>=2.13.0

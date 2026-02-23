@@ -1,0 +1,101 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // Hunyuan3D-2.1: Image-to-3D with PBR Textures
+  //
+  // Tencent's production-ready 3D asset generation model.
+  // Generates high-fidelity textured 3D meshes from images with
+  // physically-based rendering (PBR) material support.
+  //
+  // Endpoints exposed:
+  // - Port 7860: Gradio Web UI for interactive 3D generation
+  //
+  // VRAM requirements:
+  // - Shape generation only: ~10 GB
+  // - Shape + texture (PBR): ~29 GB total
+  // - Recommended: 40 GB+ for comfortable headroom
+
+  "project_id": "hunyuan3d-2-1",
+  "provider": "runpod",
+
+  "template": {
+    "name": "Hunyuan3D-2.1",
+    "description": "Image-to-3D generation with PBR textures via Tencent Hunyuan3D-2.1",
+    "author": "gpu-cli"
+  },
+
+  // GPU selection - 29GB VRAM needed for shape + texture pipeline
+  // A100 80GB or RTX 6000 Ada recommended for best experience
+  "gpu_types": [
+    { "type": "NVIDIA A100 80GB PCIe" },
+    { "type": "NVIDIA RTX 6000 Ada Generation" },
+    { "type": "NVIDIA A100-SXM4-80GB" },
+    { "type": "NVIDIA L40S" },
+    { "type": "NVIDIA A40" }
+  ],
+  "min_vram": 40,
+  "encryption": false,
+
+  // Models are ~15GB + workspace needs
+  "workspace_size_gb": 100,
+
+  // Keep pod alive for 60 min (model loading takes 2-5 minutes)
+  "keep_alive_minutes": 60,
+
+  // Expose Gradio UI port
+  "ports": [7860],
+
+  // Startup: download space, install deps, compile CUDA extensions, launch Gradio
+  "startup": "bash ./startup.sh",
+
+  // Generated 3D meshes synced back to local machine
+  "outputs": ["outputs/"],
+
+  // Readiness hook - wait for Gradio to be serving
+  // First cold start: download space + deps + compile + model download = up to 20 min
+  // Subsequent starts: model loading only = 3-5 min
+  // 180 retries * 5s = 900s (15 min) window for readiness
+  "hooks": {
+    "readiness": {
+      "type": "command",
+      "name": "hunyuan3d-ready",
+      "run": ["curl", "-sf", "http://localhost:7860/"],
+      "retry_count": 180,
+      "retry_delay_secs": 5,
+      "timeout_secs": 10
+    }
+  },
+
+  // Environment: PyTorch 2.4 CUDA 12.4 devel (needed for compiling C++ extensions)
+  // Using runpod/pytorch base image (pre-cached on RunPod = fast pull)
+  "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+
+    "system": {
+      "apt": [
+        { "name": "git" },
+        { "name": "git-lfs" },
+        { "name": "build-essential" },
+        { "name": "cmake" },
+        { "name": "ninja-build" },
+        { "name": "curl" },
+        { "name": "libgl1-mesa-glx" },
+        { "name": "libglib2.0-0" },
+        { "name": "libgomp1" },
+        { "name": "wget" }
+      ]
+    },
+
+    "shell": {
+      "steps": [
+        // Install base Python dependencies (HF hub, gradio, etc.)
+        // Space-specific deps installed by startup.sh from the downloaded Space's requirements.txt
+        // NOTE: Do NOT use -q flag - output keeps SSH connection alive during long installs
+        {
+          "run": "pip install -r requirements.txt",
+          "only_once": true,
+          "timeout_sec": 900
+        }
+      ]
+    }
+  }
+}
