@@ -146,13 +146,18 @@ print('Constraints:', constraints)
 # Step 3: Compile custom CUDA extensions
 # ==============================================================================
 compile_extensions() {
-    # Smart marker: verify the extension actually imports, not just that we ran
+    # Smart marker: verify BOTH extensions actually import, not just that we ran
     if [ -f "${SPACE_DIR}/.compile_complete" ]; then
-        if python3 -c "import custom_rasterizer" 2>/dev/null; then
-            log "Custom extensions already compiled and importable"
+        CR_OK=$(python3 -c "import custom_rasterizer; print('ok')" 2>/dev/null || echo "fail")
+        MI_OK=$(python3 -c "
+import sys; sys.path.insert(0, '${SPACE_DIR}/hy3dpaint/DifferentiableRenderer')
+import mesh_inpaint_processor; print('ok')
+" 2>/dev/null || echo "fail")
+        if [ "${CR_OK}" = "ok" ] && [ "${MI_OK}" = "ok" ]; then
+            log "Custom extensions already compiled and importable (custom_rasterizer + mesh_inpaint_processor)"
             return 0
         fi
-        log "Compile marker exists but custom_rasterizer not importable. Recompiling..."
+        log "Compile marker exists but extensions not fully importable (cr=${CR_OK}, mi=${MI_OK}). Recompiling..."
         rm -f "${SPACE_DIR}/.compile_complete"
     fi
 
@@ -164,8 +169,12 @@ compile_extensions() {
     export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"
     export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.0;8.6;8.9;9.0}"
 
-    # Install custom_rasterizer
-    # The Space ships a cp310 wheel; on Python 3.11 we build from source
+    # Ensure `python` command exists (some images only have python3)
+    if ! command -v python &>/dev/null && command -v python3 &>/dev/null; then
+        ln -sf "$(which python3)" /usr/local/bin/python 2>/dev/null || true
+    fi
+
+    # ---- custom_rasterizer ----
     log "Installing custom_rasterizer..."
     WHEEL="${SPACE_DIR}/custom_rasterizer-0.1-cp310-cp310-linux_x86_64.whl"
     INSTALLED=0
@@ -189,33 +198,52 @@ compile_extensions() {
         log "custom_rasterizer installed successfully"
     fi
 
-    # Compile DifferentiableRenderer (mesh painter for texture inpainting)
-    # compile_mesh_painter.sh uses `python` (not python3) and `python3-config`
-    # Ensure both are available
+    # ---- mesh_inpaint_processor (DifferentiableRenderer) ----
+    # This is a pybind11 C++ extension compiled with a single c++ command.
+    # We compile it directly instead of using compile_mesh_painter.sh for
+    # better error handling and compatibility with Python 3.11.
     DR_DIR="${SPACE_DIR}/hy3dpaint/DifferentiableRenderer"
-    if [ -d "${DR_DIR}" ] && [ -f "${DR_DIR}/compile_mesh_painter.sh" ]; then
-        log "Compiling DifferentiableRenderer mesh painter..."
-        # Ensure `python` command exists (some images only have python3)
-        if ! command -v python &>/dev/null && command -v python3 &>/dev/null; then
-            ln -sf "$(which python3)" /usr/local/bin/python 2>/dev/null || true
-        fi
-        # Verify python3-config is available (from python3-dev package)
-        if ! command -v python3-config &>/dev/null; then
-            log "WARNING: python3-config not found. Install python3-dev. Skipping mesh painter compilation."
+    CPP_FILE="${DR_DIR}/mesh_inpaint_processor.cpp"
+
+    if [ -f "${CPP_FILE}" ]; then
+        log "Compiling mesh_inpaint_processor (pybind11 C++ extension)..."
+
+        # Get pybind11 include flags and Python extension suffix
+        PYBIND_INCLUDES=$(python3 -m pybind11 --includes 2>/dev/null)
+        EXT_SUFFIX=$(python3 -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))" 2>/dev/null || echo ".so")
+        OUTPUT="${DR_DIR}/mesh_inpaint_processor${EXT_SUFFIX}"
+
+        if [ -z "${PYBIND_INCLUDES}" ]; then
+            log "WARNING: pybind11 not found. Cannot compile mesh_inpaint_processor."
         else
-            (cd "${DR_DIR}" && bash compile_mesh_painter.sh) || \
-                log "WARNING: DifferentiableRenderer compilation failed - texture inpainting may not work"
-            # Verify the compiled extension exists
-            SUFFIX=$(python3-config --extension-suffix 2>/dev/null || echo ".so")
-            if [ -f "${DR_DIR}/mesh_inpaint_processor${SUFFIX}" ]; then
+            log "  pybind11 includes: ${PYBIND_INCLUDES}"
+            log "  Extension suffix: ${EXT_SUFFIX}"
+            log "  Output: ${OUTPUT}"
+
+            c++ -O3 -Wall -shared -std=c++11 -fPIC \
+                ${PYBIND_INCLUDES} \
+                "${CPP_FILE}" \
+                -o "${OUTPUT}" 2>&1 && {
                 log "mesh_inpaint_processor compiled successfully"
-            else
-                log "WARNING: mesh_inpaint_processor not found after compilation"
-            fi
+            } || {
+                log "WARNING: mesh_inpaint_processor compilation failed"
+                log "  Texture inpainting will not work (shape gen still works)"
+            }
         fi
     else
-        log "WARNING: DifferentiableRenderer not found at ${DR_DIR}"
+        log "WARNING: mesh_inpaint_processor.cpp not found at ${CPP_FILE}"
     fi
+
+    # Final verification
+    python3 -c "
+import sys
+sys.path.insert(0, '${DR_DIR}')
+try:
+    import mesh_inpaint_processor
+    print('[verify] mesh_inpaint_processor: OK')
+except Exception as e:
+    print(f'[verify] mesh_inpaint_processor: FAILED ({e})')
+" 2>&1
 
     touch "${SPACE_DIR}/.compile_complete"
     log "Custom extensions step complete"
