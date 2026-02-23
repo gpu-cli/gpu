@@ -29,7 +29,7 @@ Hunyuan3D-2.1 is a production-ready 3D asset generation system featuring:
 
 ## Architecture
 
-This template takes a **dedicated approach** rather than using the generic `huggingface-gradio` runner, because Hunyuan3D-2.1 has:
+This template takes a **dedicated approach** rather than a generic HuggingFace Space runner, because Hunyuan3D-2.1 has:
 
 1. **Custom CUDA C++ extensions** that must be compiled (custom_rasterizer, DifferentiableRenderer)
 2. **Specific CUDA/PyTorch version requirements** (CUDA 12.4, PyTorch 2.4+)
@@ -50,7 +50,7 @@ This template takes a **dedicated approach** rather than using the generic `hugg
 ## Files
 
 ```
-hunyuan3d-2.1/
+image-to-3d/
 ├── gpu.jsonc         # GPU CLI configuration (GPU reqs, ports, hooks, environment)
 ├── startup.sh        # Bootstrap: download, compile, patch, launch
 ├── requirements.txt  # Base Python dependencies (installed during env setup)

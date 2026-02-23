@@ -14,7 +14,7 @@
   // - Shape + texture (PBR): ~29 GB total
   // - Recommended: 40 GB+ for comfortable headroom
 
-  "project_id": "hunyuan3d-2-1",
+  "project_id": "image-to-3d",
   "provider": "runpod",
 
   "template": {
