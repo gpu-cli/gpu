@@ -1,75 +1,238 @@
 ---
-name: gpu
-description: |
-  GPU CLI assistant - run NVIDIA GPU workloads from your Mac. Use when users:
-  - Want to run ML/AI on cloud GPUs ("train a model", "run inference", "generate images")
-  - Need help creating GPU projects (ComfyUI, vLLM, training, inference)
-  - Have GPU CLI errors (OOM, sync, connection, model loading issues)
-  - Want to optimize GPU costs or choose the right GPU
-  - Need help with gpu.jsonc configuration
-  - Ask about GPU CLI commands (gpu run, gpu use, gpu status, etc.)
+name: gpu-cli
+description: Run code on remote GPUs with zero-trust encryption. Makes remote GPU execution feel local.
+version: 0.14.0
+metadata:
+  openclaw:
+    requires:
+      bins:
+        - gpu
+    install:
+      brew: gpu-cli/tap/gpu
+      script: curl -fsSL https://gpu-cli.sh/install | sh
+    homepage: https://gpu-cli.sh
+    tags:
+      - gpu
+      - machine-learning
+      - cloud-compute
+      - remote-execution
+      - llm
+      - comfyui
 ---
 
 # GPU CLI
 
-Run NVIDIA GPU workloads from your Mac. `gpu run <command>` provisions cloud GPUs, syncs code, streams output.
+GPU CLI runs local commands on remote NVIDIA GPUs by prefixing with `gpu`. It provisions a pod, syncs your code, streams logs, and syncs outputs back: `uv run python train.py` becomes `gpu run uv run python train.py`.
 
-## Current Status
+## Quick diagnostics
 
+```bash
+gpu doctor --json       # Check if setup is healthy (daemon, auth, provider keys)
+gpu status --json       # See running pods and costs
+gpu inventory --json    # See available GPUs and pricing
 ```
-!gpu status 2>/dev/null || echo "No active pods"
-```
-Config: !`ls gpu.jsonc 2>/dev/null || echo "No config"`
 
-## Commands
+## Command families
+
+### Getting started
 
 | Command | Purpose |
-|---------|---------|
-| `gpu run <cmd>` | Execute on remote GPU |
-| `gpu use <template>` | One-click apps (ComfyUI, vLLM) |
-| `gpu status` | Show pods, jobs, costs |
-| `gpu logs [-f]` | View/stream job output |
-| `gpu stop` | Stop pod immediately |
-| `gpu inventory` | List GPUs with pricing |
-| `gpu dashboard` | Interactive TUI |
+|---|---|
+| `gpu login` | Browser-based authentication |
+| `gpu logout [-y]` | Remove session |
+| `gpu init [--gpu-type T] [--force]` | Initialize project config |
+| `gpu upgrade` | Open subscription upgrade page |
 
-## Routing
+### Running code
 
-**Read the appropriate reference based on user intent:**
+| Command | Purpose |
+|---|---|
+| `gpu run <command>` | Execute on remote GPU (main command) |
+| `gpu run -d <command>` | Run detached (background) |
+| `gpu run -a <job_id>` | Reattach to running job |
+| `gpu run --cancel <job_id>` | Cancel a running job |
+| `gpu status [--json]` | Show project status, pods, costs |
+| `gpu logs [-j JOB] [-f] [--tail N] [--json]` | View job output |
+| `gpu attach <job_id>` | Reattach to job output stream |
+| `gpu stop [POD_ID] [-y]` | Stop active pod |
 
-| User Intent | Reference File |
-|-------------|----------------|
-| Create project, run ML task, "I want to..." | [references/create.md](references/create.md) |
-| Error, OOM, failed, stuck, debug | [references/debug.md](references/debug.md) |
-| Cost, GPU selection, optimize, pricing | [references/optimize.md](references/optimize.md) |
-| Config help, gpu.jsonc fields | [references/config.md](references/config.md) |
-| Volumes, persistent storage, large models | [references/volumes.md](references/volumes.md) |
+Key `gpu run` flags: `--gpu-type`, `--gpu-count <1-8>`, `--min-vram`, `--rebuild`, `-o/--output`, `--no-output`, `--sync`, `-p/--publish <PORT>`, `-e <KEY=VALUE>`, `-i/--interactive`.
 
-## Quick Config
+### GPU inventory
 
-```jsonc
-{
-  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
-  "project_id": "my-project",
-  "gpu_types": [{ "type": "RTX 4090" }],
-  "outputs": ["results/", "*.pt"]
-}
-```
+| Command | Purpose |
+|---|---|
+| `gpu inventory [--available] [--min-vram N] [--max-price P] [--json]` | List GPUs with pricing |
 
-## GPU Quick Reference
+### Volumes
 
-| VRAM | GPU | $/hr | Best For |
-|------|-----|------|----------|
-| 12GB | RTX 4070 Ti | $0.25 | Small models |
-| 24GB | RTX 4090 | $0.44 | SD, FLUX, 7B LLMs |
-| 48GB | RTX A6000 | $0.80 | Large training |
-| 80GB | A100 PCIe | $1.79 | 70B LLMs, video |
+| Command | Purpose |
+|---|---|
+| `gpu volume list [--detailed] [--json]` | List network volumes |
+| `gpu volume create [--name N] [--size GB] [--datacenter DC]` | Create volume |
+| `gpu volume delete <VOL> [--force]` | Delete volume |
+| `gpu volume extend <VOL> --size <GB>` | Increase size |
+| `gpu volume set-global <VOL>` | Set default volume |
+| `gpu volume status [--volume V] [--json]` | Volume usage |
+| `gpu volume migrate <VOL> --to <DC>` | Migrate to datacenter |
+| `gpu volume sync <SRC> <DEST>` | Sync between volumes |
 
-## Workflow
+### Vault (encrypted storage)
 
-`gpu run` works like local development — no need to `gpu stop` between commands. Just Ctrl+C (or let the command finish) and run `gpu run <next-command>`. The remote process is terminated and the pod is reused. Only use `gpu stop` when you're done and want to release the pod.
+| Command | Purpose |
+|---|---|
+| `gpu vault list [--json]` | List encrypted output files |
+| `gpu vault export <PATH> <DEST>` | Export decrypted file |
+| `gpu vault stats [--json]` | Storage usage stats |
 
-## Sync Behavior
+### Configuration
 
-- **TO pod**: `.gitignore` controls (gitignored files don't sync)
-- **FROM pod**: `outputs` in config controls (only matching patterns sync back)
+| Command | Purpose |
+|---|---|
+| `gpu config show [--json]` | Show merged config |
+| `gpu config validate` | Validate against schema |
+| `gpu config schema` | Print JSON schema |
+| `gpu config set <KEY> <VALUE>` | Set global config option |
+| `gpu config get <KEY>` | Get global config value |
+
+### Authentication
+
+| Command | Purpose |
+|---|---|
+| `gpu auth login [--profile P]` | Authenticate with cloud provider |
+| `gpu auth logout` | Remove credentials |
+| `gpu auth status` | Show auth status |
+| `gpu auth add <HUB>` | Add hub credentials (hf, civitai) |
+| `gpu auth remove <HUB>` | Remove hub credentials |
+| `gpu auth hubs` | List configured hubs |
+
+### Organizations
+
+| Command | Purpose |
+|---|---|
+| `gpu org list` | List organizations |
+| `gpu org create <NAME>` | Create organization |
+| `gpu org switch [SLUG]` | Set active org context |
+| `gpu org invite <EMAIL>` | Invite member |
+| `gpu org service-account create --name N` | Create service token |
+| `gpu org service-account list` | List service accounts |
+| `gpu org service-account revoke <ID>` | Revoke token |
+
+### LLM inference
+
+| Command | Purpose |
+|---|---|
+| `gpu llm run [--ollama\|--vllm] [--model M] [-y]` | Launch LLM inference |
+| `gpu llm info [MODEL] [--url URL] [--json]` | Show model info |
+
+### ComfyUI workflows
+
+| Command | Purpose |
+|---|---|
+| `gpu comfyui list [--json]` | Browse available workflows |
+| `gpu comfyui info <WORKFLOW> [--json]` | Show workflow details |
+| `gpu comfyui validate <WORKFLOW> [--json]` | Pre-flight checks |
+| `gpu comfyui run <WORKFLOW>` | Run workflow on GPU |
+| `gpu comfyui generate "<PROMPT>"` | Text-to-image generation |
+| `gpu comfyui stop [WORKFLOW] [--all]` | Stop ComfyUI pod |
+
+### Notebooks
+
+| Command | Purpose |
+|---|---|
+| `gpu notebook [FILE] [--run] [--new NAME]` | Run Marimo notebook on GPU |
+
+Alias: `gpu nb`
+
+### Serverless endpoints
+
+| Command | Purpose |
+|---|---|
+| `gpu serverless deploy [--template T] [--json]` | Deploy endpoint |
+| `gpu serverless status [ENDPOINT] [--json]` | Endpoint status |
+| `gpu serverless logs [ENDPOINT]` | View request logs |
+| `gpu serverless list [--json]` | List all endpoints |
+| `gpu serverless delete [ENDPOINT]` | Delete endpoint |
+| `gpu serverless warm [--cpu\|--gpu]` | Pre-warm endpoint |
+
+### Templates
+
+| Command | Purpose |
+|---|---|
+| `gpu template list [--json]` | Browse official templates |
+| `gpu template clear-cache` | Clear cached templates |
+
+### Daemon control
+
+| Command | Purpose |
+|---|---|
+| `gpu daemon status [--json]` | Show daemon health |
+| `gpu daemon start` | Start daemon |
+| `gpu daemon stop` | Stop daemon |
+| `gpu daemon restart` | Restart daemon |
+| `gpu daemon logs [-f] [-n N]` | View daemon logs |
+
+### Tools and utilities
+
+| Command | Purpose |
+|---|---|
+| `gpu dashboard` | Interactive TUI for pods and jobs |
+| `gpu doctor [--json]` | Diagnostic checks |
+| `gpu agent-docs` | Print agent reference to stdout |
+| `gpu update [--check]` | Update CLI |
+| `gpu changelog [VERSION]` | View release notes |
+| `gpu issue ["desc"]` | Report issue |
+| `gpu desktop` | Desktop app management |
+| `gpu support` | Open community Discord |
+
+## Common workflows
+
+1. **Setup**: `gpu login` then `gpu init`
+2. **Run job**: `gpu run python train.py --epochs 10`
+3. **With specific GPU**: `gpu run --gpu-type "RTX 4090" python train.py`
+4. **Detached job**: `gpu run -d python long_training.py` then `gpu status --json`
+5. **Check status**: `gpu status --json`
+6. **View logs**: `gpu logs --json`
+7. **Stop pods**: `gpu stop -y`
+8. **LLM inference**: `gpu llm run --ollama --model llama3 -y`
+9. **ComfyUI**: `gpu comfyui run flux_schnell`
+10. **Diagnose issues**: `gpu doctor --json`
+
+`gpu run` is pod-reuse oriented: after a command completes, the next `gpu run` reuses the existing pod until you `gpu stop` or cooldown ends.
+
+## JSON output
+
+Most commands support `--json` for machine-readable output. Structured data goes to stdout; human-oriented status and progress messages go to stderr.
+
+Commands with `--json`: `status`, `logs`, `doctor`, `inventory`, `config show`, `daemon status`, `volume list`, `volume status`, `vault list`, `vault stats`, `comfyui list`, `comfyui info`, `comfyui validate`, `serverless deploy`, `serverless status`, `serverless list`, `template list`, `llm info`.
+
+## Exit codes
+
+| Code | Meaning | Recovery |
+|---|---|---|
+| `0` | Success | Proceed |
+| `1` | General error | Read stderr |
+| `2` | Usage error | Fix command syntax |
+| `10` | Auth required | `gpu auth login` |
+| `11` | Quota exceeded | `gpu upgrade` or wait |
+| `12` | Not found | Check resource ID |
+| `13` | Daemon unavailable | `gpu daemon start`, retry |
+| `14` | Timeout | Retry |
+| `15` | Cancelled | Re-run if needed |
+| `130` | Interrupted | Re-run if needed |
+
+## Configuration
+
+- Project config: `gpu.toml`, `gpu.jsonc`, or `pyproject.toml [tool.gpu]`
+- Global config: `~/.gpu-cli/config.toml` (via `gpu config set/get`)
+- Sync model: `.gitignore` controls upload; `outputs` patterns control download
+- Secrets and credentials must stay in the OS keychain, never plaintext project files
+- CI env vars: `GPU_RUNPOD_API_KEY`, `GPU_SSH_PRIVATE_KEY`, `GPU_SSH_PUBLIC_KEY`
+
+## References
+
+- Project generation and task setup: `references/create.md`
+- Debugging and common failures: `references/debug.md`
+- Config schema and field examples: `references/config.md`
+- Cost and GPU selection guidance: `references/optimize.md`
+- Persistent storage and volumes: `references/volumes.md`
