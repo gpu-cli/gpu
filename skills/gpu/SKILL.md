@@ -1,6 +1,6 @@
 ---
 name: gpu-cli
-description: Run code on remote GPUs with zero-trust encryption. Makes remote GPU execution feel local.
+description: Run ML training, LLM inference, and ComfyUI workflows on remote NVIDIA GPUs (A100, H100, RTX 4090). Cloud GPU compute with smart file sync — prefix any command with 'gpu' to run it remotely.
 version: 0.14.0
 metadata:
   openclaw:
@@ -18,6 +18,13 @@ metadata:
       - remote-execution
       - llm
       - comfyui
+      - nvidia
+      - cuda
+      - training
+      - inference
+      - runpod
+      - pytorch
+      - stable-diffusion
 ---
 
 # GPU CLI
