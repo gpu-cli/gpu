@@ -1,0 +1,8 @@
+# Chatterbox Voice Clone template ignores
+outputs/
+.tmp_audio/
+.hf_cache/
+.gpu/
+__pycache__/
+*.pyc
+*.pyo

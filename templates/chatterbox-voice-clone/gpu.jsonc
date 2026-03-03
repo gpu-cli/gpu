@@ -1,0 +1,85 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // Chatterbox Voice Clone
+  // Clone any voice from YouTube using Chatterbox-Turbo TTS
+  //
+  // How it works:
+  // 1. Paste a YouTube URL containing the target voice
+  // 2. Enter the text you want spoken in that voice
+  // 3. Chatterbox-Turbo clones the voice and generates speech
+  //
+  // Endpoints exposed:
+  // - Port 7860: Gradio Web UI for voice cloning
+  //
+  // Built on Chatterbox-Turbo (350M params) by Resemble AI
+  // Supports paralinguistic tags: [laugh], [chuckle], [cough], [sigh], etc.
+
+  "project_id": "chatterbox-voice-clone",
+  "provider": "runpod",
+
+  "template": {
+    "name": "Chatterbox Voice Clone",
+    "description": "Clone voices from YouTube using Chatterbox-Turbo TTS with Gradio UI",
+    "author": "gpu-cli"
+  },
+
+  // GPU selection - Chatterbox-Turbo is 350M params, fits on modest GPUs
+  // Needs ~4-6GB VRAM for inference, but more VRAM helps with faster generation
+  "gpu_types": [
+    { "type": "NVIDIA GeForce RTX 4090" },
+    { "type": "NVIDIA RTX A4000" },
+    { "type": "NVIDIA L40S" },
+    { "type": "NVIDIA A40" }
+  ],
+  "min_vram": 16,
+
+  // Disk space for model weights (~2GB) + yt-dlp cache + generated audio
+  "workspace_size_gb": 30,
+
+  // Gradio web UI port
+  "ports": [7860],
+
+  // Keep-alive time after last activity
+  // Model loading takes ~30s, keep pod warm for reuse
+  "keep_alive_minutes": 30,
+
+  // Startup launches model preload + Gradio server
+  "startup": "bash ./startup.sh",
+
+  // Sync generated audio files back to local machine
+  "outputs": ["outputs/"],
+
+  // Readiness hook - wait for Gradio UI to be ready
+  // Model download + loading can take 1-3 minutes on first run
+  "hooks": {
+    "readiness": {
+      "type": "command",
+      "name": "chatterbox-ready",
+      "run": ["curl", "-sf", "http://localhost:7860/"],
+      "retry_count": 90,
+      "retry_delay_secs": 3,
+      "timeout_secs": 10
+    }
+  },
+
+  // Environment setup
+  "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+
+    "system": {
+      "apt": [{ "name": "ffmpeg" }, { "name": "curl" }]
+    },
+
+    "shell": {
+      "steps": [
+        // Install Chatterbox-TTS, yt-dlp, and Gradio in one step
+        // NOTE: Do NOT use -q flag - output keeps SSH connection alive during long installs
+        {
+          "run": "pip install chatterbox-tts yt-dlp gradio",
+          "only_once": true,
+          "timeout_sec": 600
+        }
+      ]
+    }
+  }
+}
