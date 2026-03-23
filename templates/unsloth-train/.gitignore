@@ -1,0 +1,9 @@
+.hf_cache/
+outputs/
+checkpoints/
+logs/
+exports/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

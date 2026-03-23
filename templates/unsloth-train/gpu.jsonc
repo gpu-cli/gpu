@@ -1,0 +1,87 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // Unsloth Training Template
+  // Fine-tune open LLMs on a remote GPU with Unsloth + TRL.
+  //
+  // Default workflow:
+  // - edit training.json
+  // - add a dataset under data/
+  // - run `gpu use ./unsloth-train`
+
+  "project_id": "unsloth-train",
+  "provider": "runpod",
+
+  "template": {
+    "name": "Unsloth Training",
+    "description": "Single-GPU SFT fine-tuning with Unsloth, LoRA, and QLoRA",
+    "author": "gpu-cli"
+  },
+
+  // 24GB is a good floor for 7B-8B QLoRA runs.
+  "gpu_types": [
+    { "type": "NVIDIA GeForce RTX 4090" },
+    { "type": "NVIDIA A40" },
+    { "type": "NVIDIA L40S" },
+    { "type": "NVIDIA A100 80GB PCIe" }
+  ],
+  "min_vram": 24,
+
+  // Training workflows need room for model cache, checkpoints, and exports.
+  "workspace_size_gb": 120,
+
+  // Port 6006 is reserved for optional TensorBoard.
+  "ports": [6006],
+
+  // Leave pods alive long enough to inspect logs, resume, and export.
+  "keep_alive_minutes": 90,
+
+  "startup": "bash ./startup.sh",
+
+  // Sync back durable artifacts only. Keep caches local to the remote volume.
+  "outputs": [
+    "outputs/",
+    "checkpoints/latest/",
+    "checkpoints/final/",
+    "logs/",
+    "exports/"
+  ],
+
+  "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+
+    "system": {
+      "apt": [{ "name": "curl" }, { "name": "git" }]
+    },
+
+    "shell": {
+      "steps": [
+        {
+          "run": "python -m pip install --no-cache-dir -U uv && uv pip install --system --no-cache unsloth --torch-backend=cu124 && uv pip install --system --no-cache --no-deps transformers==4.56.2 trl==0.22.2 && uv pip install --system --no-cache datasets accelerate peft bitsandbytes sentencepiece protobuf tensorboard huggingface_hub",
+          "timeout_sec": 1800
+        }
+      ]
+    }
+  },
+
+  // Optional secrets:
+  //   gpu secret set HF_TOKEN <token>
+  //   gpu secret set WANDB_API_KEY <token>
+  "inputs": [
+    {
+      "type": "secret",
+      "key": "hf_token",
+      "label": "HuggingFace Token",
+      "description": "Token for gated models or private datasets",
+      "help": "Get your token at https://huggingface.co/settings/tokens",
+      "required": false
+    },
+    {
+      "type": "secret",
+      "key": "wandb_api_key",
+      "label": "Weights & Biases API Key",
+      "description": "Optional experiment tracking token",
+      "help": "Get your token at https://wandb.ai/authorize",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+[project]
+name = "unsloth-train-template"
+version = "0.1.0"
+description = "GPU CLI Unsloth training template"
+requires-python = ">=3.11"
+dependencies = [
+  "accelerate",
+  "bitsandbytes",
+  "datasets",
+  "huggingface_hub",
+  "peft",
+  "protobuf",
+  "sentencepiece",
+  "tensorboard",
+  "transformers==4.56.2",
+  "trl==0.22.2",
+  "unsloth"
+]
+
+[tool.gpu]
+outputs = [
+  "outputs/",
+  "checkpoints/latest/",
+  "checkpoints/final/",
+  "logs/",
+  "exports/"
+]
