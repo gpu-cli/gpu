@@ -47,7 +47,7 @@
     "weight_decay": 0.001,
     "lr_scheduler_type": "linear",
     "packing": false,
-    "report_to": "none",
+    "report_to": "tensorboard",
     "bf16": false,
     "fp16": false
   },
