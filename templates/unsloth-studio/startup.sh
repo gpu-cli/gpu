@@ -7,6 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 export PYTHONUNBUFFERED=1
+export PATH="$PATH:$(python -c 'import sysconfig; print(sysconfig.get_path("scripts"))')"
 export HF_HOME="$SCRIPT_DIR/.hf_cache"
 export HUGGINGFACE_HUB_CACHE="$SCRIPT_DIR/.hf_cache/hub"
 export TRANSFORMERS_CACHE="$SCRIPT_DIR/.hf_cache/transformers"
