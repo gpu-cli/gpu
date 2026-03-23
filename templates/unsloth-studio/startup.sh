@@ -7,7 +7,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 export PYTHONUNBUFFERED=1
-export PATH="$PATH:$(python -c 'import sysconfig; print(sysconfig.get_path("scripts"))')"
 export HF_HOME="$SCRIPT_DIR/.hf_cache"
 export HUGGINGFACE_HUB_CACHE="$SCRIPT_DIR/.hf_cache/hub"
 export TRANSFORMERS_CACHE="$SCRIPT_DIR/.hf_cache/transformers"
@@ -65,7 +64,7 @@ echo "Launching Unsloth Studio..."
 echo ""
 
 # Run Studio in foreground to keep SSH connection alive
-unsloth studio -H 0.0.0.0 -p 8000 &
+python -m unsloth_cli studio -H 0.0.0.0 -p 8000 &
 STUDIO_PID=$!
 
 # Wait for Studio to be ready
