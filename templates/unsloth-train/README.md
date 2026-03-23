@@ -1,6 +1,6 @@
 # Unsloth Training - GPU CLI Template
 
-Fine-tune open LLMs on a remote GPU with Unsloth, TRL, and LoRA/QLoRA. This template is designed for single-GPU supervised fine-tuning and now ships with a more compelling text-to-SQL demo based on `b-mc2/sql-create-context` and `Qwen2.5-7B`.
+Fine-tune open LLMs on a remote GPU with Unsloth, TRL, and LoRA/QLoRA. This template is designed for single-GPU supervised fine-tuning and ships with a function-calling demo that teaches a 7B model to reliably call tools in JSON format.
 
 The runtime intentionally installs Unsloth with `uv` and `--torch-backend=cu124` so the pod keeps a GPU-enabled torch build instead of accidentally downgrading to a CPU-only install.
 
@@ -9,15 +9,14 @@ The runtime intentionally installs Unsloth with `uv` and `--torch-backend=cu124`
 ```bash
 cd templates/unsloth-train
 
-# Optional: edit training.json to change the model and training knobs
-# Optional: switch to a local dataset instead of the default Hugging Face SQL dataset
+# Optional: edit training.json to change the model, dataset, and training knobs
 
 gpu use .
 ```
 
 The default template exposes TensorBoard on `http://localhost:6006` and syncs the durable training artifacts back to your local machine.
 
-Out of the box, it fine-tunes `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` on `b-mc2/sql-create-context`, which teaches the model to turn natural language questions plus schema context into SQL.
+Out of the box, it fine-tunes `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` on `NousResearch/hermes-function-calling-v1`, which teaches the model to call functions with valid JSON arguments given a set of tool definitions.
 
 ## What This Template Does
 
@@ -36,15 +35,33 @@ Out of the box, it fine-tunes `unsloth/Qwen2.5-7B-Instruct-bnb-4bit` on `b-mc2/s
 | `train.py` | Unsloth SFT training entrypoint |
 | `training.json` | Model, dataset, LoRA, training, and runtime knobs |
 | `merge_and_export.py` | Optional helper for merged 16-bit export |
-| `data/sample-alpaca.jsonl` | Tiny local fallback dataset for smoke testing |
+| `data/sample-function-call.jsonl` | Tiny local fallback dataset for smoke testing |
 
 ## Dataset Formats
 
-The template supports three initial dataset modes.
+The template supports four dataset formats. Set `max_examples` in the dataset config to subsample large datasets for quick demos.
+
+### ShareGPT / Chat format (default)
+
+This is the default mode, used for the function-calling demo with `NousResearch/hermes-function-calling-v1`.
+
+```json
+{
+  "dataset": {
+    "source": "huggingface",
+    "name": "NousResearch/hermes-function-calling-v1",
+    "config": "func-calling-singleturn",
+    "split": "train",
+    "format": "sharegpt",
+    "conversations_field": "conversations",
+    "max_examples": 2000
+  }
+}
+```
+
+Each example contains a `conversations` array with `{"from": "system|human|gpt", "value": "..."}` turns. The handler applies the model's chat template automatically.
 
 ### SQL Create Context dataset
-
-This is the default mode and is tuned for the public `b-mc2/sql-create-context` dataset.
 
 ```json
 {
@@ -59,14 +76,6 @@ This is the default mode and is tuned for the public `b-mc2/sql-create-context` 
   }
 }
 ```
-
-Each example is rendered into a prompt with:
-
-- a natural language question
-- `CREATE TABLE` schema context
-- the target SQL query
-
-That makes the first-run demo feel much more product-like than a generic instruction dataset.
 
 ### Alpaca-style JSONL or JSON
 
@@ -184,14 +193,15 @@ That means you can:
 The default pairing is intentionally opinionated:
 
 - **Model:** `unsloth/Qwen2.5-7B-Instruct-bnb-4bit`
-- **Dataset:** `b-mc2/sql-create-context`
+- **Dataset:** `NousResearch/hermes-function-calling-v1`
 
 Why this pairing works well:
 
 - the model is strong, ungated, and practical on a 24GB GPU
-- the dataset is public, free, and CC-BY-4.0 licensed
-- the before/after is easy to explain: train your own text-to-SQL copilot
-- the schema-grounded examples make the output feel more specialized and useful
+- the dataset is public, free, and Apache 2.0 licensed (the data behind Hermes 2 Pro)
+- the before/after is measurable: JSON validity rate jumps dramatically after fine-tuning
+- function calling and tool use are the highest-demand capability in AI agents (2026)
+- every developer can relate to "teach your 7B model to reliably call your API"
 
 ## Secrets
 
@@ -220,7 +230,7 @@ gpu secret set WANDB_API_KEY <your-token>
 | 13B-14B | QLoRA | 40GB-48GB |
 | 7B-8B | LoRA / 16-bit | 40GB+ |
 
-For v1, this template is tuned around 7B-8B QLoRA workloads, especially the default Qwen text-to-SQL demo.
+For v1, this template is tuned around 7B-8B QLoRA workloads, especially the default Qwen function-calling demo.
 
 ## Exporting a Merged Model
 
@@ -261,7 +271,7 @@ This writes a merged 16-bit export to `exports/merged_16bit/`.
 
 ## Next Steps
 
-1. Run the default SQL demo once to validate your GPU setup.
+1. Run the default function-calling demo once to validate your GPU setup.
 2. Tune `training.json` for your model size, batch size, and target task.
-3. Switch to a local dataset if you want to fine-tune on your own schema/task data.
+3. Switch to a local dataset if you want to fine-tune on your own data.
 4. Export merged weights after training if you want downstream inference packaging.

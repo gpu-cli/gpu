@@ -1,3 +1,0 @@
-{"instruction":"Explain what LoRA does in one sentence.","input":"","output":"LoRA fine-tunes a model by training small adapter weights instead of changing every original parameter."}
-{"instruction":"Give a short tip for avoiding GPU out-of-memory errors during fine-tuning.","input":"","output":"Reduce batch size or sequence length and keep 4-bit loading enabled when possible."}
-{"instruction":"Describe why checkpointing matters in remote GPU training.","input":"","output":"Checkpointing lets you resume long runs after interruptions without losing all training progress."}

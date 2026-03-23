@@ -77,11 +77,15 @@ def find_latest_checkpoint(output_dir: Path) -> Optional[Path]:
     return checkpoints[-1][1]
 
 
-def format_dataset(dataset_cfg: dict, tokenizer):
+SHAREGPT_ROLE_MAP = {"system": "system", "human": "user", "gpt": "assistant"}
+
+
+def format_dataset(dataset_cfg: dict, tokenizer, seed: int = 3407):
     source = dataset_cfg.get("source", "local")
     path = dataset_cfg.get("path")
     split = dataset_cfg.get("split", "train")
     fmt = dataset_cfg.get("format", "alpaca")
+    max_examples = dataset_cfg.get("max_examples")
 
     if source == "huggingface":
         name = dataset_cfg["name"]
@@ -101,6 +105,9 @@ def format_dataset(dataset_cfg: dict, tokenizer):
             dataset = load_dataset("parquet", data_files=str(data_path), split="train")
         else:
             raise ValueError(f"Unsupported dataset format: {suffix}")
+
+    if max_examples and len(dataset) > max_examples:
+        dataset = dataset.shuffle(seed=seed).select(range(max_examples))
 
     eos_token = resolve_eos_text(tokenizer)
 
@@ -156,6 +163,29 @@ def format_dataset(dataset_cfg: dict, tokenizer):
             return {"text": texts}
 
         return dataset.map(map_sql, batched=True)
+
+    if fmt == "sharegpt":
+        conversations_field = dataset_cfg.get("conversations_field", "conversations")
+
+        def map_sharegpt(examples):
+            texts = []
+            for convos in examples[conversations_field]:
+                messages = [
+                    {"role": SHAREGPT_ROLE_MAP.get(c["from"], c["from"]), "content": c["value"]}
+                    for c in convos
+                ]
+                if hasattr(tokenizer, "apply_chat_template"):
+                    text = tokenizer.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=False
+                    )
+                else:
+                    text = "\n".join(
+                        f"### {m['role'].title()}:\n{m['content']}" for m in messages
+                    )
+                texts.append(text + eos_token)
+            return {"text": texts}
+
+        return dataset.map(map_sharegpt, batched=True)
 
     raise ValueError(f"Unsupported dataset.format: {fmt}")
 
@@ -241,7 +271,7 @@ def main() -> None:
     )
 
     print("Loading dataset...")
-    dataset = format_dataset(dataset_cfg, tokenizer)
+    dataset = format_dataset(dataset_cfg, tokenizer, seed=runtime_cfg.get("seed", 3407))
 
     report_to = train_cfg.get("report_to", "none")
     if report_to == "wandb" and not os.environ.get("WANDB_API_KEY"):

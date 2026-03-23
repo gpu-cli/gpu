@@ -9,12 +9,12 @@
   },
   "dataset": {
     "source": "huggingface",
-    "name": "b-mc2/sql-create-context",
+    "name": "NousResearch/hermes-function-calling-v1",
+    "config": "func-calling-singleturn",
     "split": "train",
-    "format": "sql_create_context",
-    "question_field": "question",
-    "context_field": "context",
-    "answer_field": "answer"
+    "format": "sharegpt",
+    "conversations_field": "conversations",
+    "max_examples": 2000
   },
   "lora": {
     "rank": 16,
@@ -52,7 +52,7 @@
     "fp16": false
   },
   "runtime": {
-    "run_name": "qwen25-7b-sql-qlora",
+    "run_name": "qwen25-7b-function-calling-qlora",
     "seed": 3407,
     "output_dir": "outputs/current",
     "latest_checkpoint_dir": "checkpoints/latest",
