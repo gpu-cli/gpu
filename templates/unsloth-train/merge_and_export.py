@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-import unsloth
+import unsloth  # noqa: F401 — side-effect: patches transformers before other imports
 from unsloth import FastLanguageModel
 
 

@@ -8,7 +8,7 @@ import signal
 from pathlib import Path
 from typing import Optional
 
-import unsloth
+import unsloth  # noqa: F401 — side-effect: patches transformers before other imports
 import torch
 from datasets import load_dataset
 from trl import SFTConfig, SFTTrainer
@@ -95,9 +95,7 @@ def format_dataset(dataset_cfg: dict, tokenizer):
             raise FileNotFoundError(f"Dataset not found: {data_path}")
 
         suffix = data_path.suffix.lower()
-        if suffix == ".jsonl":
-            dataset = load_dataset("json", data_files=str(data_path), split="train")
-        elif suffix == ".json":
+        if suffix in (".json", ".jsonl"):
             dataset = load_dataset("json", data_files=str(data_path), split="train")
         elif suffix == ".parquet":
             dataset = load_dataset("parquet", data_files=str(data_path), split="train")
@@ -314,7 +312,6 @@ def main() -> None:
         sync_checkpoint_dirs()
         trainer.save_model(str(latest_dir))
         tokenizer.save_pretrained(str(latest_dir))
-        copy_tree(latest_dir, final_dir)
         model.save_pretrained(str(final_dir))
         tokenizer.save_pretrained(str(final_dir))
     finally:

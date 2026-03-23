@@ -46,8 +46,8 @@ if [ ! -f "./training.json" ]; then
   exit 1
 fi
 
-python - <<'PY'
-import json
+TB_ENABLED=$(python - <<'PY'
+import json, sys
 from pathlib import Path
 
 cfg = json.loads(Path("training.json").read_text())
@@ -55,14 +55,18 @@ runtime = cfg.get("runtime", {})
 dataset = cfg.get("dataset", {})
 model = cfg.get("model", {})
 
-print("Configuration summary:")
-print(f"  Run name: {runtime.get('run_name', 'unsloth-run')}")
-print(f"  Base model: {model.get('name', '<missing>')}")
-print(f"  Dataset source: {dataset.get('source', 'local')}")
-print(f"  Dataset path: {dataset.get('path', '<none>')}")
-print(f"  Output dir: {runtime.get('output_dir', 'outputs/current')}")
-print(f"  TensorBoard: {runtime.get('tensorboard', {}).get('enabled', True)}")
+print("Configuration summary:", file=sys.stderr)
+print(f"  Run name: {runtime.get('run_name', 'unsloth-run')}", file=sys.stderr)
+print(f"  Base model: {model.get('name', '<missing>')}", file=sys.stderr)
+print(f"  Dataset source: {dataset.get('source', 'local')}", file=sys.stderr)
+print(f"  Dataset path: {dataset.get('path', '<none>')}", file=sys.stderr)
+print(f"  Output dir: {runtime.get('output_dir', 'outputs/current')}", file=sys.stderr)
+
+tb = runtime.get("tensorboard", {}).get("enabled", True)
+print(f"  TensorBoard: {tb}", file=sys.stderr)
+print("true" if tb else "false")
 PY
+)
 
 if [ -n "${HF_TOKEN:-}" ]; then
   echo "HuggingFace token detected. Gated model access enabled."
@@ -72,15 +76,6 @@ fi
 if [ -n "${WANDB_API_KEY:-}" ]; then
   echo "Weights & Biases token detected."
 fi
-
-TB_ENABLED=$(python - <<'PY'
-import json
-from pathlib import Path
-
-cfg = json.loads(Path("training.json").read_text())
-print("true" if cfg.get("runtime", {}).get("tensorboard", {}).get("enabled", True) else "false")
-PY
-)
 
 if [ "$TB_ENABLED" = "true" ]; then
   if curl -sf http://localhost:6006/ >/dev/null 2>&1; then

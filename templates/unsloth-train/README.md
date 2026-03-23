@@ -2,7 +2,7 @@
 
 Fine-tune open LLMs on a remote GPU with Unsloth, TRL, and LoRA/QLoRA. This template is designed for single-GPU supervised fine-tuning and now ships with a more compelling text-to-SQL demo based on `b-mc2/sql-create-context` and `Qwen2.5-7B`.
 
-The runtime intentionally installs Unsloth with `uv` and `--torch-backend=auto` so the pod keeps a GPU-enabled torch build instead of accidentally downgrading to a CPU-only install.
+The runtime intentionally installs Unsloth with `uv` and `--torch-backend=cu124` so the pod keeps a GPU-enabled torch build instead of accidentally downgrading to a CPU-only install.
 
 ## Quick Start
 
@@ -139,7 +139,7 @@ Relevant config:
 | `num_train_epochs` | Full epochs to train |
 | `max_steps` | Optional step cap for quick runs |
 | `save_steps` | Checkpoint frequency |
-| `report_to` | `none` or `wandb` |
+| `report_to` | `none`, `tensorboard`, or `wandb` |
 
 ### `runtime`
 
