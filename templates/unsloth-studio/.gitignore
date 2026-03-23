@@ -1,0 +1,9 @@
+.hf_cache/
+.unsloth_cache/
+exports/
+trained_models/
+data_recipes/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

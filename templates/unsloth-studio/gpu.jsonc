@@ -1,0 +1,93 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // Unsloth Studio Template
+  // No-code web UI for fine-tuning, chatting with, and exporting LLMs.
+  //
+  // Endpoints exposed:
+  // - Port 8000: Unsloth Studio web UI
+  // - Port 8001: OpenAI-compatible inference API (/v1)
+  //
+  // Usage: gpu use unsloth-studio
+
+  "project_id": "unsloth-studio",
+  "provider": "runpod",
+
+  "template": {
+    "name": "Unsloth Studio",
+    "description": "No-code web UI for fine-tuning and running LLMs with 2x speed and 70% less VRAM",
+    "author": "gpu-cli"
+  },
+
+  // 24GB is a good floor for 7B-8B QLoRA fine-tuning.
+  "gpu_types": [
+    { "type": "NVIDIA GeForce RTX 4090" },
+    { "type": "NVIDIA A40" },
+    { "type": "NVIDIA L40S" },
+    { "type": "NVIDIA A100 80GB PCIe" }
+  ],
+  "min_vram": 24,
+
+  // Model cache + training artifacts need room.
+  "workspace_size_gb": 120,
+
+  // Studio UI on 8000, OpenAI-compatible inference API on 8001.
+  "ports": [8000, 8001],
+
+  // Interactive sessions — keep pods alive for a while.
+  "keep_alive_minutes": 90,
+
+  "startup": "bash ./startup.sh",
+
+  // Sync back user exports and trained adapters.
+  "outputs": [
+    "exports/",
+    "trained_models/",
+    "data_recipes/"
+  ],
+
+  // Readiness hook — wait for Studio UI to respond.
+  "hooks": {
+    "readiness": {
+      "type": "command",
+      "name": "studio-ready",
+      "run": ["curl", "-sf", "http://localhost:8000/"],
+      "retry_count": 60,
+      "retry_delay_secs": 5,
+      "timeout_secs": 10
+    }
+  },
+
+  "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+
+    "system": {
+      "apt": [{ "name": "curl" }, { "name": "git" }]
+    },
+
+    "shell": {
+      "steps": [
+        {
+          "run": "python -m pip install --no-cache-dir -U uv && uv pip install --system --no-cache unsloth --torch-backend=cu124",
+          "timeout_sec": 1800
+        },
+        {
+          "run": "unsloth studio setup",
+          "timeout_sec": 600
+        }
+      ]
+    }
+  },
+
+  // Optional secrets:
+  //   gpu secret set HF_TOKEN <token>
+  "inputs": [
+    {
+      "type": "secret",
+      "key": "hf_token",
+      "label": "HuggingFace Token",
+      "description": "Token for gated models, private datasets, and exporting to HuggingFace Hub",
+      "help": "Get your token at https://huggingface.co/settings/tokens",
+      "required": false
+    }
+  ]
+}
