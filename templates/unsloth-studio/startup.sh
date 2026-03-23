@@ -64,7 +64,7 @@ echo "Launching Unsloth Studio..."
 echo ""
 
 # Run Studio in foreground to keep SSH connection alive
-python -m unsloth_cli studio -H 0.0.0.0 -p 8000 &
+unsloth studio -H 0.0.0.0 -p 8000 &
 STUDIO_PID=$!
 
 # Wait for Studio to be ready
