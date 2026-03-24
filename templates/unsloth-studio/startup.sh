@@ -60,6 +60,12 @@ if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
   exit 0
 fi
 
+# First-run setup (compiles llama.cpp with CUDA, builds frontend)
+# Skips automatically if already done from a previous run on this volume.
+echo "Running Unsloth Studio setup (first run may take a few minutes)..."
+unsloth studio setup
+echo ""
+
 echo "Launching Unsloth Studio..."
 echo ""
 

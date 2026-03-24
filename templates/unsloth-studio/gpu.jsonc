@@ -54,7 +54,7 @@
       "type": "command",
       "name": "studio-ready",
       "run": ["curl", "-sf", "http://localhost:8000/"],
-      "retry_count": 60,
+      "retry_count": 120,
       "retry_delay_secs": 5,
       "timeout_secs": 10
     }
@@ -70,7 +70,7 @@
     "shell": {
       "steps": [
         {
-          "run": "pip3 install --no-cache-dir unsloth && unsloth studio setup",
+          "run": "pip3 install --no-cache-dir unsloth",
           "timeout_sec": 1800
         }
       ]
