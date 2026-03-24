@@ -30,7 +30,7 @@
   "workspace_size_gb": 120,
 
   // Port 6006 is reserved for optional TensorBoard.
-  "ports": [6006],
+  "ports": [{ "port": 6006, "description": "TensorBoard" }],
 
   // Leave pods alive long enough to inspect logs, resume, and export.
   "keep_alive_minutes": 90,

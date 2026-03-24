@@ -31,7 +31,10 @@
   "workspace_size_gb": 120,
 
   // Studio UI on 8000, OpenAI-compatible inference API on 8001.
-  "ports": [8000, 8001],
+  "ports": [
+    { "port": 8000, "description": "Studio UI" },
+    { "port": 8001, "description": "Inference API" }
+  ],
 
   // Interactive sessions — keep pods alive for a while.
   "keep_alive_minutes": 90,
