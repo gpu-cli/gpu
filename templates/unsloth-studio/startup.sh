@@ -62,8 +62,9 @@ fi
 
 # First-run setup (compiles llama.cpp with CUDA, builds frontend)
 # Skips automatically if already done from a previous run on this volume.
+# CI=true suppresses interactive prompts; < /dev/null prevents stdin blocking.
 echo "Running Unsloth Studio setup (first run may take a few minutes)..."
-unsloth studio setup
+CI=true unsloth studio update < /dev/null || CI=true unsloth studio setup < /dev/null
 echo ""
 
 echo "Launching Unsloth Studio..."
