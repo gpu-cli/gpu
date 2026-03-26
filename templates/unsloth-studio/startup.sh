@@ -62,9 +62,25 @@ fi
 
 # First-run setup (compiles llama.cpp with CUDA, builds frontend)
 # Skips automatically if already done from a previous run on this volume.
-# CI=true suppresses interactive prompts; < /dev/null prevents stdin blocking.
+# Full first-run takes 15-35 min (frontend build, Python deps, llama.cpp compilation).
+#
+# Workaround: bun install can hang indefinitely (known bug: oven-sh/bun#22846).
+# Unsloth's setup.sh retries then falls back to npm, but ONLY if bun exits with
+# an error — a silent hang waits forever. The watchdog below kills hung bun after
+# 90s, triggering the npm fallback.
 echo "Running Unsloth Studio setup (first run may take a few minutes)..."
+(
+  sleep 90
+  if pkill -f "bun install" 2>/dev/null; then
+    echo "[gpu-cli] Killed hung 'bun install' (known bun bug). Setup will retry with npm."
+  fi
+) &
+BUN_WATCHDOG_PID=$!
+
 CI=true unsloth studio update < /dev/null || CI=true unsloth studio setup < /dev/null
+
+kill $BUN_WATCHDOG_PID 2>/dev/null || true
+wait $BUN_WATCHDOG_PID 2>/dev/null || true
 echo ""
 
 echo "Launching Unsloth Studio..."
