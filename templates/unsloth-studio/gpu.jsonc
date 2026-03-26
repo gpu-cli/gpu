@@ -63,17 +63,10 @@
   "environment": {
     "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
 
+    // System deps only — Unsloth Studio is installed at runtime via the
+    // official install.sh (handles venv, frontend, llama.cpp, CUDA detection).
     "system": {
       "apt": [{ "name": "curl" }, { "name": "git" }]
-    },
-
-    "shell": {
-      "steps": [
-        {
-          "run": "pip3 install --no-cache-dir unsloth",
-          "timeout_sec": 1800
-        }
-      ]
     }
   },
 
