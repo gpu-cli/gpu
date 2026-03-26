@@ -81,7 +81,13 @@ if [ -z "$UNSLOTH_BIN" ]; then
     cmake git build-essential libcurl4-openssl-dev pciutils curl nodejs npm \
     2>&1 | tail -1
 
+  # Force npm: bun install hangs in containers (oven-sh/bun#22846).
+  # This shim makes bun fail fast so unsloth's setup falls back to npm.
+  printf '#!/bin/sh\nexit 1\n' > /usr/local/bin/bun && chmod +x /usr/local/bin/bun
+
   curl -fsSL https://unsloth.ai/install.sh | sh
+
+  rm -f /usr/local/bin/bun
 
   # Re-resolve after install
   if [ -x "$UNSLOTH_VENV/bin/unsloth" ]; then
