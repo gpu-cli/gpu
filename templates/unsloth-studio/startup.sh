@@ -80,7 +80,7 @@ export COLAB_GPU_CLI=1
 unsloth studio setup || true
 
 rm -f /usr/local/bin/bun
-unset COLAB_GPU_CLI
+# Keep COLAB_GPU_CLI set — unsloth studio launch also checks for the venv
 
 echo ""
 
