@@ -80,7 +80,12 @@ export COLAB_GPU_CLI=1
 unsloth studio setup || true
 
 rm -f /usr/local/bin/bun
-# Keep COLAB_GPU_CLI set — unsloth studio launch also checks for the venv
+
+# The launch command checks for ~/.unsloth/studio/unsloth_studio/bin/python.
+# Since we installed into system Python (Colab mode), create a symlink so
+# the launch code finds it and uses system Python to run the server.
+mkdir -p "$HOME/.unsloth/studio/unsloth_studio/bin"
+ln -sf "$(which python3)" "$HOME/.unsloth/studio/unsloth_studio/bin/python"
 
 echo ""
 
