@@ -77,7 +77,7 @@
     "shell": {
       "steps": [
         {
-          "run": "python -m pip install --no-cache-dir -U uv && uv pip install --system --no-cache unsloth --torch-backend=cu124",
+          "run": "python -m pip install --no-cache-dir -U uv && uv pip install --system --no-cache unsloth --torch-backend=cu124 && printf '#!/usr/bin/env python3\\nfrom unsloth_cli import app\\napp()\\n' > /usr/local/bin/unsloth && chmod +x /usr/local/bin/unsloth",
           "timeout_sec": 1800
         }
       ]
