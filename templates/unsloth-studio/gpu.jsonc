@@ -72,9 +72,6 @@
       ]
     },
 
-    // pip3 install creates the `unsloth` CLI binary with the correct
-    // Python shebang. Do NOT use uv or create manual wrapper scripts —
-    // they can point to the wrong Python interpreter.
     "shell": {
       "steps": [
         {

@@ -19,10 +19,12 @@ STUDIO_PID=""
 cleanup() {
   echo ""
   echo "Shutting down Unsloth Studio..."
+
   if [ -n "$STUDIO_PID" ] && kill -0 "$STUDIO_PID" 2>/dev/null; then
     kill -TERM "$STUDIO_PID" 2>/dev/null || true
     wait "$STUDIO_PID" || true
   fi
+
   echo "Shutdown complete."
   exit 0
 }
@@ -40,74 +42,56 @@ fi
 # Check if Studio is already running (from a previous job on this pod)
 if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
   echo "Unsloth Studio is already running on port 8000 (reusing existing server)"
+
+  echo ""
+  echo "========================================"
+  echo "       UNSLOTH STUDIO READY"
+  echo "========================================"
   echo ""
   echo "  Studio UI:     http://localhost:8000"
   echo "  Inference API: http://localhost:8001/v1"
+  echo ""
+  echo "========================================"
+
+  # Keep alive while Studio is running
   while curl -sf http://localhost:8000/ > /dev/null 2>&1; do
     sleep 30
   done
   exit 0
 fi
 
-# ── Resolve unsloth binary ──
-# pip3 install creates the binary at /usr/local/bin/unsloth with the correct
-# Python shebang. Verify it exists before proceeding.
-if ! command -v unsloth &>/dev/null; then
-  echo "ERROR: 'unsloth' command not found."
-  echo "Checking Python can import unsloth_cli..."
-  if python3 -c "from unsloth_cli import app; print('OK')" 2>/dev/null; then
-    echo "Module found — creating wrapper..."
-    python3 -c "
-import sys, os
-wrapper = '#!' + sys.executable + '\nfrom unsloth_cli import app\napp()\n'
-with open('/usr/local/bin/unsloth', 'w') as f:
-    f.write(wrapper)
-os.chmod('/usr/local/bin/unsloth', 0o755)
-"
-  else
-    echo "FATAL: unsloth package not installed correctly."
-    exit 1
-  fi
-fi
-
-echo "Using: $(which unsloth)"
-
-# ── First-run setup ──
-# unsloth studio setup (setup.sh) builds the React frontend, installs
-# Python backend deps, and downloads/builds llama.cpp.
-#
-# Two workarounds needed for containerized environments:
-#
-# 1. Bun shim: bun install hangs in containers (oven-sh/bun#22846).
-#    Shim makes `bun install` fail fast → npm fallback.
-#    Other bun commands succeed so set -euo pipefail doesn't abort.
-#
-# 2. COLAB_ env var: setup.sh requires a venv at ~/.unsloth/studio/
-#    (only created by install.sh which uses Python 3.13 → xformers fails).
-#    Setting any COLAB_* env var triggers Colab mode → installs backend
-#    deps into system Python instead. Our base image already has torch+CUDA.
+# First-run setup (compiles llama.cpp with CUDA, builds frontend)
+# Skips automatically if already done from a previous run on this volume.
 echo "Running Unsloth Studio setup (first run may take a few minutes)..."
 
+# Workaround 1: bun install hangs in containers (oven-sh/bun#22846).
+# Shim makes bun install fail fast so setup.sh falls back to npm.
 cat > /usr/local/bin/bun << 'SHIM'
 #!/bin/sh
-case "$1" in
-  install) exit 1 ;;
-  *) exit 0 ;;
-esac
+case "$1" in install) exit 1 ;; *) exit 0 ;; esac
 SHIM
 chmod +x /usr/local/bin/bun
 
+# Workaround 2: setup.sh requires a venv at ~/.unsloth/studio/ that only
+# install.sh creates. Setting a COLAB_* env var triggers Colab mode which
+# installs backend deps into system Python instead (no venv needed).
 export COLAB_GPU_CLI=1
-unsloth studio setup < /dev/null || true
+
+unsloth studio setup || true
+
 rm -f /usr/local/bin/bun
 unset COLAB_GPU_CLI
 
 echo ""
-echo "Launching Unsloth Studio..."
 
+echo "Launching Unsloth Studio..."
+echo ""
+
+# Run Studio in foreground to keep SSH connection alive
 unsloth studio -H 0.0.0.0 -p 8000 &
 STUDIO_PID=$!
 
+# Wait for Studio to be ready
 echo "Waiting for Studio UI to start..."
 for i in {1..120}; do
   if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
@@ -115,7 +99,7 @@ for i in {1..120}; do
     break
   fi
   if [ $i -eq 120 ]; then
-    echo "Warning: Studio UI did not respond within 240 seconds"
+    echo "Warning: Studio UI did not respond within 120 seconds (it may still be initializing)"
   fi
   sleep 2
 done
@@ -128,6 +112,13 @@ echo ""
 echo "  Studio UI:     http://localhost:8000"
 echo "  Inference API: http://localhost:8001/v1"
 echo ""
+echo "  Features:"
+echo "    - Fine-tune 500+ models with LoRA/QLoRA"
+echo "    - Visual Data Recipes for dataset preparation"
+echo "    - Side-by-side model comparison"
+echo "    - Export to GGUF, Safetensors, or HuggingFace Hub"
+echo ""
 echo "========================================"
 
+# Wait for Studio process — keeps container running
 wait $STUDIO_PID
