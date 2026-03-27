@@ -60,35 +60,24 @@ if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
   exit 0
 fi
 
-# First-run setup: builds frontend (React/Vite) + compiles llama.cpp with CUDA.
-# Skips automatically if already done from a previous run on this volume.
-#
-# Force npm over bun: bun install hangs in containers (oven-sh/bun#22846).
-# The shim makes bun fail fast so unsloth's setup.sh falls back to npm.
-echo "Running Unsloth Studio setup (first run may take a few minutes)..."
+# Resolve unsloth binary
+UNSLOTH_BIN=""
+UNSLOTH_VENV="$HOME/.unsloth/studio/unsloth_studio"
+if [ -x "$UNSLOTH_VENV/bin/unsloth" ]; then
+  UNSLOTH_BIN="$UNSLOTH_VENV/bin/unsloth"
+elif command -v unsloth &>/dev/null; then
+  UNSLOTH_BIN="$(command -v unsloth)"
+else
+  echo "ERROR: unsloth binary not found. Check the Docker image."
+  exit 1
+fi
 
-# Shim bun: only fail on `install` (which hangs in containers).
-# Other commands (--version, pm cache rm) must succeed or the setup
-# script's set -e will abort before reaching the npm fallback.
-cat > /usr/local/bin/bun << 'SHIM'
-#!/bin/sh
-case "$1" in
-  install) exit 1 ;;
-  *) exit 0 ;;
-esac
-SHIM
-chmod +x /usr/local/bin/bun
-
-unsloth studio update < /dev/null || unsloth studio setup < /dev/null
-
-rm -f /usr/local/bin/bun
-
-echo ""
+echo "Using: $UNSLOTH_BIN"
 echo "Launching Unsloth Studio..."
 echo ""
 
 # Run Studio in background
-unsloth studio -H 0.0.0.0 -p 8000 &
+"$UNSLOTH_BIN" studio -H 0.0.0.0 -p 8000 &
 STUDIO_PID=$!
 
 # Wait for Studio to be ready
