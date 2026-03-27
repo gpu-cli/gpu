@@ -77,7 +77,20 @@ chmod +x /usr/local/bin/bun
 # installs backend deps into system Python instead (no venv needed).
 export COLAB_GPU_CLI=1
 
+# Run setup with a progress indicator — some steps (npm install, Python deps)
+# run silently via run_quiet and can take 2-5 minutes with no output.
+(
+  while true; do
+    echo "  [setup still running...]"
+    sleep 30
+  done
+) &
+PROGRESS_PID=$!
+
 unsloth studio setup || true
+
+kill $PROGRESS_PID 2>/dev/null
+wait $PROGRESS_PID 2>/dev/null || true
 
 rm -f /usr/local/bin/bun
 
