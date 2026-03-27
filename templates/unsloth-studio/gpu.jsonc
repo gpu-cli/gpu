@@ -60,13 +60,27 @@
     }
   },
 
-  // Use the official unsloth Docker image — everything pre-installed.
-  // No pip install, no frontend build, no llama.cpp compilation needed.
   "environment": {
-    "base_image": "unsloth/unsloth",
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
 
     "system": {
-      "apt": [{ "name": "curl" }]
+      "apt": [
+        { "name": "curl" },
+        { "name": "git" },
+        { "name": "cmake" },
+        { "name": "build-essential" }
+      ]
+    },
+
+    // Same install pattern as unsloth-train template (proven to work).
+    // uv + --torch-backend=cu124 handles CUDA wheel resolution correctly.
+    "shell": {
+      "steps": [
+        {
+          "run": "python -m pip install --no-cache-dir -U uv && uv pip install --system --no-cache unsloth --torch-backend=cu124",
+          "timeout_sec": 1800
+        }
+      ]
     }
   },
 
