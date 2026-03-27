@@ -60,54 +60,25 @@ if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
   exit 0
 fi
 
-# Resolve unsloth binary — prefer the official venv location, fall back to PATH.
-UNSLOTH_BIN=""
-UNSLOTH_VENV="$HOME/.unsloth/studio/unsloth_studio"
-if [ -x "$UNSLOTH_VENV/bin/unsloth" ]; then
-  UNSLOTH_BIN="$UNSLOTH_VENV/bin/unsloth"
-elif command -v unsloth &>/dev/null; then
-  UNSLOTH_BIN="$(command -v unsloth)"
-fi
+# First-run setup: builds frontend (React/Vite) + compiles llama.cpp with CUDA.
+# Skips automatically if already done from a previous run on this volume.
+#
+# Force npm over bun: bun install hangs in containers (oven-sh/bun#22846).
+# The shim makes bun fail fast so unsloth's setup.sh falls back to npm.
+echo "Running Unsloth Studio setup (first run may take a few minutes)..."
 
-# First-run: install via the official installer if unsloth isn't available.
-# The official install.sh handles headless environments (detects non-TTY),
-# pre-installs system deps, sets up its own venv, builds frontend + llama.cpp.
-# First run takes 15-35 min; subsequent runs skip if already installed.
-if [ -z "$UNSLOTH_BIN" ]; then
-  echo "Installing Unsloth Studio (first run, may take 15-35 minutes)..."
+printf '#!/bin/sh\nexit 1\n' > /usr/local/bin/bun && chmod +x /usr/local/bin/bun
 
-  # Pre-install system deps so the installer doesn't prompt for sudo
-  apt-get update -qq && apt-get install -y -qq \
-    cmake git build-essential libcurl4-openssl-dev pciutils curl nodejs npm \
-    2>&1 | tail -1
+unsloth studio update < /dev/null || unsloth studio setup < /dev/null
 
-  # Force npm: bun install hangs in containers (oven-sh/bun#22846).
-  # This shim makes bun fail fast so unsloth's setup falls back to npm.
-  printf '#!/bin/sh\nexit 1\n' > /usr/local/bin/bun && chmod +x /usr/local/bin/bun
-
-  curl -fsSL https://unsloth.ai/install.sh | sh
-
-  rm -f /usr/local/bin/bun
-
-  # Re-resolve after install
-  if [ -x "$UNSLOTH_VENV/bin/unsloth" ]; then
-    UNSLOTH_BIN="$UNSLOTH_VENV/bin/unsloth"
-  elif command -v unsloth &>/dev/null; then
-    UNSLOTH_BIN="$(command -v unsloth)"
-  else
-    echo "ERROR: unsloth binary not found after installation"
-    exit 1
-  fi
-else
-  echo "Unsloth Studio already installed."
-fi
+rm -f /usr/local/bin/bun
 
 echo ""
 echo "Launching Unsloth Studio..."
 echo ""
 
-# Run Studio in background to keep SSH connection alive
-"$UNSLOTH_BIN" studio -H 0.0.0.0 -p 8000 &
+# Run Studio in background
+unsloth studio -H 0.0.0.0 -p 8000 &
 STUDIO_PID=$!
 
 # Wait for Studio to be ready

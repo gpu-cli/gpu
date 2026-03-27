@@ -63,10 +63,27 @@
   "environment": {
     "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
 
-    // System deps only — Unsloth Studio is installed at runtime via the
-    // official install.sh (handles venv, frontend, llama.cpp, CUDA detection).
     "system": {
-      "apt": [{ "name": "curl" }, { "name": "git" }]
+      "apt": [
+        { "name": "curl" },
+        { "name": "git" },
+        { "name": "cmake" },
+        { "name": "build-essential" },
+        { "name": "nodejs" },
+        { "name": "npm" }
+      ]
+    },
+
+    // Install unsloth into the base image's Python (3.11 + CUDA + PyTorch).
+    // Do NOT use the official install.sh — it creates a Python 3.13 venv
+    // where xformers has no pre-built wheels and fails compiling from source.
+    "shell": {
+      "steps": [
+        {
+          "run": "pip3 install --no-cache-dir unsloth",
+          "timeout_sec": 1800
+        }
+      ]
     }
   },
 
