@@ -62,7 +62,14 @@ fi
 
 # First-run setup (compiles llama.cpp with CUDA, builds frontend)
 # Skips automatically if already done from a previous run on this volume.
-echo "Running Unsloth Studio setup (first run may take a few minutes)..."
+echo "Running Unsloth Studio setup (first run takes 5-10 minutes)..."
+echo ""
+echo "  Setup steps:"
+echo "    1. Install Node.js          (~30s)"
+echo "    2. Build frontend           (~2-3 min, silent)"
+echo "    3. Install Python deps      (~2-3 min)"
+echo "    4. Download llama.cpp       (~1-2 min)"
+echo ""
 
 # Workaround 1: bun install hangs in containers (oven-sh/bun#22846).
 # Shim makes bun install fail fast so setup.sh falls back to npm.
@@ -77,12 +84,15 @@ chmod +x /usr/local/bin/bun
 # installs backend deps into system Python instead (no venv needed).
 export COLAB_GPU_CLI=1
 
-# Run setup with a progress indicator — some steps (npm install, Python deps)
-# run silently via run_quiet and can take 2-5 minutes with no output.
+# Progress monitor — tracks elapsed time so silent steps don't look stuck.
+SETUP_START=$SECONDS
 (
   while true; do
-    echo "  [setup still running...]"
-    sleep 30
+    sleep 15
+    elapsed=$(( SECONDS - SETUP_START ))
+    mins=$(( elapsed / 60 ))
+    secs=$(( elapsed % 60 ))
+    printf "  [%dm %02ds elapsed — setup still running...]\n" "$mins" "$secs"
   done
 ) &
 PROGRESS_PID=$!
@@ -91,6 +101,9 @@ unsloth studio setup || true
 
 kill $PROGRESS_PID 2>/dev/null
 wait $PROGRESS_PID 2>/dev/null || true
+
+elapsed=$(( SECONDS - SETUP_START ))
+echo "  Setup completed in $(( elapsed / 60 ))m $(( elapsed % 60 ))s"
 
 rm -f /usr/local/bin/bun
 
