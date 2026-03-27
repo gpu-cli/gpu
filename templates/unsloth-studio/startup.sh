@@ -67,7 +67,17 @@ fi
 # The shim makes bun fail fast so unsloth's setup.sh falls back to npm.
 echo "Running Unsloth Studio setup (first run may take a few minutes)..."
 
-printf '#!/bin/sh\nexit 1\n' > /usr/local/bin/bun && chmod +x /usr/local/bin/bun
+# Shim bun: only fail on `install` (which hangs in containers).
+# Other commands (--version, pm cache rm) must succeed or the setup
+# script's set -e will abort before reaching the npm fallback.
+cat > /usr/local/bin/bun << 'SHIM'
+#!/bin/sh
+case "$1" in
+  install) exit 1 ;;
+  *) exit 0 ;;
+esac
+SHIM
+chmod +x /usr/local/bin/bun
 
 unsloth studio update < /dev/null || unsloth studio setup < /dev/null
 

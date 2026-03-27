@@ -68,9 +68,7 @@
         { "name": "curl" },
         { "name": "git" },
         { "name": "cmake" },
-        { "name": "build-essential" },
-        { "name": "nodejs" },
-        { "name": "npm" }
+        { "name": "build-essential" }
       ]
     },
 
