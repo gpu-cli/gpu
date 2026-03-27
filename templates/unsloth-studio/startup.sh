@@ -23,8 +23,6 @@ cleanup() {
     kill -TERM "$STUDIO_PID" 2>/dev/null || true
     wait "$STUDIO_PID" || true
   fi
-  # Clean up bun shim if we left one behind
-  rm -f /usr/local/bin/bun 2>/dev/null || true
   echo "Shutdown complete."
   exit 0
 }
@@ -45,35 +43,51 @@ if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
   echo ""
   echo "  Studio UI:     http://localhost:8000"
   echo "  Inference API: http://localhost:8001/v1"
-  # Keep alive while Studio is running
   while curl -sf http://localhost:8000/ > /dev/null 2>&1; do
     sleep 30
   done
   exit 0
 fi
 
-# ── First-run setup ──
-# unsloth studio setup (setup.sh) does three things:
-#   1. Builds the React frontend (needs Node + npm/bun)
-#   2. Installs Python backend deps (needs venv OR Colab mode)
-#   3. Downloads/builds llama.cpp (needs cmake + CUDA)
-#
-# Two workarounds are needed:
-#
-# A) Bun shim: bun install hangs in containers (oven-sh/bun#22846).
-#    A shim at /usr/local/bin/bun makes `bun install` fail fast so
-#    setup.sh falls back to npm. Other bun commands (--version, pm cache rm)
-#    return success so set -euo pipefail doesn't abort prematurely.
-#
-# B) Colab env var: setup.sh checks for a venv at ~/.unsloth/studio/
-#    that only install.sh creates. Without it, setup.sh exits 1.
-#    Setting a COLAB_* env var triggers Colab mode, which installs
-#    backend deps into system Python instead — exactly what we want
-#    since the base image already has torch + CUDA.
+# ── Resolve unsloth binary ──
+# pip3 install creates the binary at /usr/local/bin/unsloth with the correct
+# Python shebang. Verify it exists before proceeding.
+if ! command -v unsloth &>/dev/null; then
+  echo "ERROR: 'unsloth' command not found."
+  echo "Checking Python can import unsloth_cli..."
+  if python3 -c "from unsloth_cli import app; print('OK')" 2>/dev/null; then
+    echo "Module found — creating wrapper..."
+    python3 -c "
+import sys, os
+wrapper = '#!' + sys.executable + '\nfrom unsloth_cli import app\napp()\n'
+with open('/usr/local/bin/unsloth', 'w') as f:
+    f.write(wrapper)
+os.chmod('/usr/local/bin/unsloth', 0o755)
+"
+  else
+    echo "FATAL: unsloth package not installed correctly."
+    exit 1
+  fi
+fi
 
+echo "Using: $(which unsloth)"
+
+# ── First-run setup ──
+# unsloth studio setup (setup.sh) builds the React frontend, installs
+# Python backend deps, and downloads/builds llama.cpp.
+#
+# Two workarounds needed for containerized environments:
+#
+# 1. Bun shim: bun install hangs in containers (oven-sh/bun#22846).
+#    Shim makes `bun install` fail fast → npm fallback.
+#    Other bun commands succeed so set -euo pipefail doesn't abort.
+#
+# 2. COLAB_ env var: setup.sh requires a venv at ~/.unsloth/studio/
+#    (only created by install.sh which uses Python 3.13 → xformers fails).
+#    Setting any COLAB_* env var triggers Colab mode → installs backend
+#    deps into system Python instead. Our base image already has torch+CUDA.
 echo "Running Unsloth Studio setup (first run may take a few minutes)..."
 
-# Workaround A: bun shim
 cat > /usr/local/bin/bun << 'SHIM'
 #!/bin/sh
 case "$1" in
@@ -83,23 +97,17 @@ esac
 SHIM
 chmod +x /usr/local/bin/bun
 
-# Workaround B: trigger Colab mode for system Python deps
 export COLAB_GPU_CLI=1
-
 unsloth studio setup < /dev/null || true
-
-# Clean up
 rm -f /usr/local/bin/bun
 unset COLAB_GPU_CLI
 
 echo ""
 echo "Launching Unsloth Studio..."
 
-# Run Studio in background
 unsloth studio -H 0.0.0.0 -p 8000 &
 STUDIO_PID=$!
 
-# Wait for Studio to be ready
 echo "Waiting for Studio UI to start..."
 for i in {1..120}; do
   if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
@@ -122,5 +130,4 @@ echo "  Inference API: http://localhost:8001/v1"
 echo ""
 echo "========================================"
 
-# Wait for Studio process — keeps container running
 wait $STUDIO_PID

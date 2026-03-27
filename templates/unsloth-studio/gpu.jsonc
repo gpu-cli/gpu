@@ -72,12 +72,13 @@
       ]
     },
 
-    // Same install pattern as unsloth-train template (proven to work).
-    // uv + --torch-backend=cu124 handles CUDA wheel resolution correctly.
+    // pip3 install creates the `unsloth` CLI binary with the correct
+    // Python shebang. Do NOT use uv or create manual wrapper scripts —
+    // they can point to the wrong Python interpreter.
     "shell": {
       "steps": [
         {
-          "run": "python -m pip install --no-cache-dir -U uv && uv pip install --system --no-cache unsloth --torch-backend=cu124 && printf '#!/usr/bin/env python3\\nfrom unsloth_cli import app\\napp()\\n' > /usr/local/bin/unsloth && chmod +x /usr/local/bin/unsloth",
+          "run": "pip3 install --no-cache-dir unsloth",
           "timeout_sec": 1800
         }
       ]
