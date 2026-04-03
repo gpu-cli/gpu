@@ -93,7 +93,7 @@ def load_video_model():
 # ============================================================
 # Visualization
 # ============================================================
-def overlay_masks(image, masks, boxes=None, scores=None, object_ids=None, alpha=0.45):
+def overlay_masks(image, masks, boxes=None, scores=None, object_ids=None, alpha=0.45, label_text=None):
     """Draw colored segmentation masks and bounding boxes on an image.
 
     Args:
@@ -138,6 +138,8 @@ def overlay_masks(image, masks, boxes=None, scores=None, object_ids=None, alpha=
 
             # Build label text
             parts = []
+            if label_text:
+                parts.append(label_text)
             if object_ids is not None and i < len(object_ids):
                 parts.append(f"ID {int(object_ids[i])}")
             if scores is not None and i < len(scores):
@@ -268,7 +270,7 @@ def segment_image(image, text_prompt, threshold, state):
         image = np.array(image)
 
     # Overlay masks on image
-    result = overlay_masks(image, masks, boxes, scores)
+    result = overlay_masks(image, masks, boxes, scores, label_text=text_prompt.strip())
 
     # Save output
     output_filename = f"seg_{uuid.uuid4().hex[:8]}.png"
@@ -416,7 +418,7 @@ def segment_video(video_path, text_prompt, video_state, progress=gr.Progress()):
                 if object_ids is not None and torch.is_tensor(object_ids):
                     object_ids = object_ids.cpu().numpy()
 
-                frame = overlay_masks(frame, masks, boxes, scores, object_ids)
+                frame = overlay_masks(frame, masks, boxes, scores, object_ids, label_text=text_prompt.strip())
 
             writer.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
