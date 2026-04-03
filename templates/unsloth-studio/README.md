@@ -38,7 +38,7 @@ Once the pod is ready, open the Studio UI at the URL shown in the terminal (port
 Needed for gated models (e.g., Llama 3) and pushing trained models to HuggingFace Hub.
 
 ```bash
-gpu secret set HF_TOKEN <your-token>
+gpu auth add hf
 ```
 
 ## Output Layout
@@ -76,7 +76,7 @@ First launch downloads and compiles dependencies (llama.cpp with CUDA, React fro
 ### Gated model download fails
 
 - Accept the model license on HuggingFace first
-- Set `HF_TOKEN` with `gpu secret set`
+- Set `HF_TOKEN` with `gpu auth add hf`
 
 ### Inference API not responding
 

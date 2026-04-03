@@ -210,7 +210,7 @@ Why this pairing works well:
 Optional for this default demo. Needed for gated models or private datasets.
 
 ```bash
-gpu secret set HF_TOKEN <your-token>
+gpu auth add hf
 ```
 
 ### Weights & Biases
@@ -218,7 +218,7 @@ gpu secret set HF_TOKEN <your-token>
 Optional. Set `training.report_to` to `wandb` and provide:
 
 ```bash
-gpu secret set WANDB_API_KEY <your-token>
+gpu auth add wandb
 ```
 
 ## Recommended VRAM Tiers
@@ -260,7 +260,7 @@ This writes a merged 16-bit export to `exports/merged_16bit/`.
 ### Gated model download fails
 
 - accept the model license on HuggingFace first
-- set `HF_TOKEN` with `gpu secret set`
+- set `HF_TOKEN` with `gpu auth add hf`
 - verify the token has the correct scopes
 
 ### TensorBoard is blank

@@ -64,24 +64,6 @@
   },
 
   // Optional secrets:
-  //   gpu secret set HF_TOKEN <token>
-  //   gpu secret set WANDB_API_KEY <token>
-  "inputs": [
-    {
-      "type": "secret",
-      "key": "hf_token",
-      "label": "HuggingFace Token",
-      "description": "Token for gated models or private datasets",
-      "help": "Get your token at https://huggingface.co/settings/tokens",
-      "required": false
-    },
-    {
-      "type": "secret",
-      "key": "wandb_api_key",
-      "label": "Weights & Biases API Key",
-      "description": "Optional experiment tracking token",
-      "help": "Get your token at https://wandb.ai/authorize",
-      "required": false
-    }
-  ]
+  //   gpu auth add hf
+  //   gpu auth add wandb
 }

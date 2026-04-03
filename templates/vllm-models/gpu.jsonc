@@ -80,17 +80,7 @@
   },
 
   // Optional: HuggingFace token for gated models (Meta Llama, etc.)
-  // Set via: gpu secret set HF_TOKEN <your-token>
-  "inputs": [
-    {
-      "type": "secret",
-      "key": "hf_token",
-      "label": "HuggingFace Token",
-      "description": "HuggingFace token for gated models (Llama, etc.)",
-      "help": "Get your token at https://huggingface.co/settings/tokens",
-      "required": false
-    }
-  ],
+  // Set via: gpu auth add hf
 
   // ==========================================================================
   // Serverless Deployment

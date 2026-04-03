@@ -83,15 +83,5 @@
   },
 
   // Optional secrets:
-  //   gpu secret set HF_TOKEN <token>
-  "inputs": [
-    {
-      "type": "secret",
-      "key": "hf_token",
-      "label": "HuggingFace Token",
-      "description": "Token for gated models, private datasets, and exporting to HuggingFace Hub",
-      "help": "Get your token at https://huggingface.co/settings/tokens",
-      "required": false
-    }
-  ]
+  //   gpu auth add hf
 }

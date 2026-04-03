@@ -84,7 +84,7 @@ Some models require a HuggingFace token:
 4. Set token in GPU CLI:
 
 ```bash
-gpu secret set HF_TOKEN <your-token>
+gpu auth add hf
 ```
 
 ## API Usage

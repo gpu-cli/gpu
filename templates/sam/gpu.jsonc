@@ -1,0 +1,100 @@
+{
+  "$schema": "https://gpu-cli.sh/schema/v1/gpu.json",
+  // SAM 3: Segment Anything in Images & Video
+  //
+  // Meta's open-vocabulary segmentation model that detects, segments, and
+  // tracks objects using text prompts. Type "dog" or "person in red shirt"
+  // and SAM 3 finds, outlines, and tracks them through video in real time.
+  //
+  // Two modes:
+  // 1. Video segmentation - upload MP4, type what to find, get annotated video
+  // 2. Image segmentation - upload photo, describe objects, get segmented output
+  //
+  // Endpoints exposed:
+  // - Port 7860: Gradio Web UI
+  //
+  // Model: SAM 3.1 (848M params) by Meta AI Research
+  // VRAM: ~4 GB inference, runs comfortably on 16GB+ GPUs
+
+  "project_id": "sam-video-segmentation",
+  "provider": "runpod",
+
+  "template": {
+    "name": "SAM 3 Video Segmentation",
+    "description": "Segment and track anything in images and video using text prompts with Meta SAM 3",
+    "author": "gpu-cli"
+  },
+
+  // GPU selection - SAM 3 uses ~4GB VRAM, very efficient
+  // 16GB minimum gives plenty of headroom for video frame processing
+  "gpu_types": [
+    { "type": "NVIDIA GeForce RTX 4090" },
+    { "type": "NVIDIA RTX A5000" },
+    { "type": "NVIDIA L40S" },
+    { "type": "NVIDIA A40" },
+    { "type": "NVIDIA GeForce RTX 3090" }
+  ],
+  "min_vram": 16,
+
+  // Model weights (~3.4GB) + video processing workspace
+  "workspace_size_gb": 50,
+
+  // Gradio web UI port
+  "ports": [7860],
+
+  // Model loads in ~30s after first download; keep warm for interactive use
+  "keep_alive_minutes": 30,
+
+  // Startup installs sam3 package and launches Gradio server
+  "startup": "bash ./startup.sh",
+
+  // Sync annotated videos and segmented images back to local machine
+  "outputs": ["outputs/"],
+
+  // Readiness hook - wait for Gradio UI
+  // First run: model download (~3.4GB) + loading = 2-5 min
+  // Subsequent: model loading from cache = ~30s
+  "hooks": {
+    "readiness": {
+      "type": "command",
+      "name": "sam3-ready",
+      "run": ["curl", "-sf", "http://localhost:7860/"],
+      "retry_count": 120,
+      "retry_delay_secs": 3,
+      "timeout_secs": 10
+    }
+  },
+
+  // HuggingFace token required - SAM 3 is a gated model
+  // Set BEFORE running: gpu auth add hf
+  // Accept the license: https://huggingface.co/facebook/sam3
+
+  // Environment: use the same stable RunPod PyTorch base as the other official
+  // templates. The newer CUDA 12.8 image has been flaky for CLI agent startup
+  // on RunPod GPU pods.
+  "environment": {
+    "base_image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+
+    "system": {
+      "apt": [
+        { "name": "git" },
+        { "name": "ffmpeg" },
+        { "name": "curl" },
+        { "name": "libgl1-mesa-glx" },
+        { "name": "libglib2.0-0" }
+      ]
+    },
+
+    "shell": {
+      "steps": [
+        // Install SAM 3 from official Meta repo + Gradio UI dependencies
+        // NOTE: Do NOT use -q flag - output keeps SSH connection alive during long installs
+        {
+          "run": "pip install git+https://github.com/facebookresearch/sam3.git gradio opencv-python-headless imageio[pyav] einops pycocotools psutil decord",
+          "only_once": true,
+          "timeout_sec": 600
+        }
+      ]
+    }
+  }
+}
